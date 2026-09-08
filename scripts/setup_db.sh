@@ -5,7 +5,7 @@
 set -e
 
 DB_NAME="${DB_NAME:-pyfridge}"
-DB_USER="${DB_USER:-postgres}"
+DB_USER="${DB_USER:-${USER:-$(whoami)}}"
 
 echo "Creating database '$DB_NAME'..."
 createdb -U "$DB_USER" "$DB_NAME" 2>/dev/null || echo "(database already exists, continuing)"
