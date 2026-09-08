@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pyfridge"
+version = "0.1.0"
+description = "A Hamilton-inspired smart fridge inventory and meal selection library"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "Drake Sadosky", email = "drake.sadosky12@gmail.com" }
+]
+keywords = ["fridge", "inventory", "nutrition", "meal-planning", "food"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+requires-python = ">=3.10"
+dependencies = [
+  "psycopg2-binary>=2.9",
+  "python-dotenv>=1.0",
+  "tabulate>=0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov"]
+
+[project.scripts]
+pyfridge = "pyfridge.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/duufi/pyfridge"
+Repository = "https://github.com/duufi/pyfridge"
+Issues = "https://github.com/duufi/pyfridge/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyfridge*"]
