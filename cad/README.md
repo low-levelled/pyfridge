@@ -22,7 +22,7 @@ Sources (facts extracted; LG's PDFs are copyrighted and are **not** committed he
 
 | File | What it is |
 |---|---|
-| `reference_unit.html` | Exterior shell, dimensioned. Bar handles, hidden top hinges, dispenser (left door), Door-in-Door seam (right door), freezer drawer, kick grille. |
+| `reference_unit.html` | Full assembly, part by part. Closed / Open / Ghost views, door-angle slider, per-layer toggles (shell, doors, fresh-food, freezer, refrigeration & controls, hinges/base). Every mesh carries its LG part number and a C/P confidence tag; hover for dimensions, click to pin, filterable parts list. |
 | `spec/dimensions.md` | Every dimension we have, each tagged **confirmed** (LG document) / **measured** (owner) / **placeholder** (no source yet). |
 | `spec/parts.md` | Full parts inventory with LG part numbers, grouped by assembly. |
 

@@ -4,42 +4,40 @@
 <style>
   :root{
     --bg-top:#eef2f3; --bg-bottom:#d7dee0;
-    --surface:#ffffffcc; --surface-solid:#ffffff;
+    --surface:#ffffffd9; --surface-solid:#ffffff;
     --ink:#16211f; --ink-muted:#55666a;
-    --line:#c3cdd0;
+    --line:#c3cdd0; --line-strong:#9fb0b4;
     --accent:#ff6a1f; --accent-ink:#8a3512;
-    --accent-2:#1f8a90; --accent-2-ink:#0f5458;
+    --accent-2:#1f8a90; --accent-2-ink:#0f5458; --accent-2-soft:#1f8a9022;
     --shadow: 0 8px 28px -8px rgba(20,30,32,0.25);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg-top:#10161a; --bg-bottom:#060a0c;
-      --surface:#141b1ecc; --surface-solid:#141b1e;
+      --surface:#141b1ed9; --surface-solid:#141b1e;
       --ink:#e6eef0; --ink-muted:#8fa0a4;
-      --line:#263136;
+      --line:#263136; --line-strong:#3a4a50;
       --accent:#ff7d33; --accent-ink:#ffd8bd;
-      --accent-2:#35c2c8; --accent-2-ink:#bdf3f4;
+      --accent-2:#35c2c8; --accent-2-ink:#bdf3f4; --accent-2-soft:#35c2c82a;
       --shadow: 0 8px 28px -8px rgba(0,0,0,0.6);
     }
   }
   :root[data-theme="dark"]{
     --bg-top:#10161a; --bg-bottom:#060a0c;
-    --surface:#141b1ecc; --surface-solid:#141b1e;
+    --surface:#141b1ed9; --surface-solid:#141b1e;
     --ink:#e6eef0; --ink-muted:#8fa0a4;
-    --line:#263136;
+    --line:#263136; --line-strong:#3a4a50;
     --accent:#ff7d33; --accent-ink:#ffd8bd;
-    --accent-2:#35c2c8; --accent-2-ink:#bdf3f4;
+    --accent-2:#35c2c8; --accent-2-ink:#bdf3f4; --accent-2-soft:#35c2c82a;
     --shadow: 0 8px 28px -8px rgba(0,0,0,0.6);
   }
 
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
   body{
-    background:var(--bg-bottom);
-    color:var(--ink);
+    background:var(--bg-bottom); color:var(--ink);
     font-family:"Public Sans", system-ui, -apple-system, sans-serif;
-    overflow:hidden;
-    height:100vh;
+    overflow:hidden; height:100vh;
   }
   #stage{position:fixed; inset:0;}
   canvas#gl{display:block; width:100%; height:100%; touch-action:none; cursor:grab;}
@@ -47,83 +45,101 @@
 
   .hud{position:fixed; z-index:5; pointer-events:none;}
   .panel{
-    pointer-events:auto;
-    background:var(--surface);
-    backdrop-filter: blur(10px);
-    border:1px solid var(--line);
-    border-radius:10px;
-    box-shadow: var(--shadow);
+    pointer-events:auto; background:var(--surface); backdrop-filter: blur(10px);
+    border:1px solid var(--line); border-radius:10px; box-shadow: var(--shadow);
+  }
+  .mono{font-family:"IBM Plex Mono", monospace;}
+  .label{
+    font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-muted);
   }
 
-  #topbar{
-    top:16px; left:16px; right:16px;
-    display:flex; align-items:center; gap:12px;
-    flex-wrap:wrap;
-  }
-  #topbar .panel{
-    display:flex; align-items:center; gap:14px;
-    padding:10px 16px;
-    flex-wrap:wrap;
-  }
-  #title{
-    font-weight:700; font-size:15px; letter-spacing:0.01em;
-    white-space:nowrap;
-  }
-  #title small{
-    display:block; font-weight:500; font-size:11px; color:var(--ink-muted);
-    text-transform:uppercase; letter-spacing:0.08em; margin-top:2px;
-  }
+  #topbar{ top:16px; left:16px; right:16px; display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  #topbar .panel{ display:flex; align-items:center; gap:14px; padding:10px 16px; flex-wrap:wrap; }
+  #title{ font-weight:700; font-size:15px; letter-spacing:0.01em; white-space:nowrap; }
+  #title small{ display:block; font-weight:500; font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.08em; margin-top:2px; }
   .divider{width:1px; height:28px; background:var(--line); flex-shrink:0;}
   .chips{display:flex; gap:8px; flex-wrap:wrap;}
   .chip{
-    font-family:"IBM Plex Mono", monospace;
-    font-size:11.5px; font-weight:500;
-    color:var(--ink); background:transparent;
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:5px 9px;
-    white-space:nowrap;
-    line-height:1.2;
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; font-weight:500; color:var(--ink);
+    border:1px solid var(--line); border-radius:6px; padding:5px 9px; white-space:nowrap; line-height:1.2;
   }
   .chip b{font-weight:600; color:var(--ink-muted); font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; margin-right:6px;}
 
-  #caption{
-    left:16px; bottom:16px; max-width:min(420px, calc(100vw - 32px));
+  /* left: view + layers */
+  #controls{ left:16px; top:96px; width:210px; display:flex; flex-direction:column; gap:10px; }
+  #controls .panel{ padding:12px 14px; }
+  .seg{ display:flex; gap:4px; background:var(--surface-solid); border:1px solid var(--line); border-radius:7px; padding:3px; }
+  .seg button{
+    flex:1; border:0; background:transparent; color:var(--ink-muted); font:inherit; font-size:11.5px; font-weight:600;
+    padding:6px 4px; border-radius:5px; cursor:pointer;
   }
-  #caption .panel{padding:12px 14px;}
-  #caption .label{
-    font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--accent-2-ink); margin-bottom:5px; display:flex; align-items:center; gap:6px;
-  }
-  #caption .label::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--accent-2); display:inline-block;}
-  #caption p{margin:0; font-size:12px; line-height:1.5; color:var(--ink-muted);}
-  #caption p strong{color:var(--ink); font-weight:600;}
+  .seg button[aria-pressed="true"]{ background:var(--accent-2); color:#fff; }
+  .seg button:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .layers{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .layers label{ display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer; }
+  .layers input{ accent-color:var(--accent-2); width:14px; height:14px; margin:0; }
+  .layers .sw{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+  .layers .n{ margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-muted); }
+  .range{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:11.5px; color:var(--ink-muted); }
+  .range input{ flex:1; accent-color:var(--accent-2); }
 
-  #hint{
-    right:16px; bottom:16px;
+  /* right: parts list */
+  #parts{ right:16px; top:96px; bottom:16px; width:300px; display:flex; flex-direction:column; }
+  #parts .panel{ display:flex; flex-direction:column; flex:1; min-height:0; padding:0; overflow:hidden; }
+  #parts header{ padding:12px 14px 8px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:8px; }
+  #parts header .count{ margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-muted); }
+  #parts input#filter{
+    margin:8px 10px 6px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface-solid);
+    color:var(--ink); font:inherit; font-size:12px;
   }
-  #hint .panel{
-    padding:8px 12px; font-family:"IBM Plex Mono", monospace;
-    font-size:11px; color:var(--ink-muted); display:flex; gap:10px; align-items:center;
+  #plist{ overflow:auto; flex:1; padding:0 4px 8px; }
+  #plist h4{ margin:10px 10px 4px; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-muted); display:flex; align-items:center; gap:6px; }
+  #plist h4 .sw{ width:8px; height:8px; border-radius:2px; }
+  .pitem{
+    display:grid; grid-template-columns:1fr auto; gap:2px 8px; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:12px;
   }
-  #hint kbd{
-    font-family:inherit; background:var(--surface-solid); border:1px solid var(--line);
-    border-radius:4px; padding:1px 5px; color:var(--ink); font-size:10.5px;
-  }
+  .pitem:hover{ background:var(--accent-2-soft); }
+  .pitem.sel{ background:var(--accent-2); color:#fff; }
+  .pitem .pn{ font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-muted); }
+  .pitem.sel .pn{ color:#e8fbfb; }
+  .pitem .tag{ font-size:9px; font-weight:700; letter-spacing:.06em; border-radius:3px; padding:1px 4px; align-self:center; }
+  .tag.C{ background:var(--accent-2-soft); color:var(--accent-2-ink); }
+  .tag.P{ background:#ff6a1f22; color:var(--accent-ink); }
+  .pitem.sel .tag{ background:#ffffff33; color:#fff; }
+
+  /* bottom: readout */
+  #readout{ left:16px; bottom:16px; max-width:min(520px, calc(100vw - 32px)); }
+  #readout .panel{ padding:11px 14px; }
+  #readout .name{ font-weight:700; font-size:14px; }
+  #readout .meta{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-muted); margin-top:2px; }
+  #readout .dims{ font-family:"IBM Plex Mono",monospace; font-size:11.5px; margin-top:6px; }
+  #readout .note{ font-size:12px; color:var(--ink-muted); margin-top:6px; line-height:1.45; }
+
+  #hint{ right:332px; bottom:16px; }
+  #hint .panel{ padding:8px 12px; font-family:"IBM Plex Mono", monospace; font-size:11px; color:var(--ink-muted); display:flex; gap:10px; align-items:center; }
+  #hint kbd{ font-family:inherit; background:var(--surface-solid); border:1px solid var(--line); border-radius:4px; padding:1px 5px; color:var(--ink); font-size:10.5px; }
 
   #loading{
-    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    background:var(--bg-bottom); z-index:10; transition:opacity .5s ease;
-    font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--ink-muted);
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:var(--bg-bottom); z-index:10;
+    transition:opacity .5s ease; font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-muted);
   }
+  #mobiletoggle{ display:none; }
 
+  @media (max-width:900px){
+    #parts{ display:none; }
+    #hint{ right:16px; }
+  }
   @media (max-width:640px){
     #topbar .panel{padding:10px 12px; gap:10px;}
     #title{font-size:13px;}
     .chip{font-size:10.5px; padding:4px 7px;}
-    #caption{right:16px;}
+    #controls{ top:auto; bottom:110px; width:calc(100vw - 32px); }
+    #controls .panel{ padding:10px 12px; }
+    .layers{ flex-direction:row; flex-wrap:wrap; gap:6px 14px; }
+    .layers .n{ display:none; }
     #hint{display:none;}
+    #readout{ right:16px; }
   }
 </style>
 
@@ -132,26 +148,51 @@
 
 <div class="hud" id="topbar">
   <div class="panel">
-    <div id="title">pyfridge<small>Reference unit — exterior</small></div>
+    <div id="title">pyfridge<small>Reference unit — LG LFXS27566S</small></div>
     <div class="divider"></div>
     <div class="chips">
-      <span class="chip"><b>Model</b>LG LFXS27566S, 26.6 cu ft</span>
-      <span class="chip"><b>W×H×D</b>35¾ × 69¾ × 32⅞ in (35⅜ w/ handles)</span>
-      <span class="chip"><b>Handles</b>bar, 2½ in protrusion</span>
-      <span class="chip"><b>Dispenser</b>left · <b>Door-in-Door</b>right</span>
+      <span class="chip"><b>W×H×D</b>35¾ × 69¾ × 32⅞ in</span>
+      <span class="chip"><b>Fridge cavity</b>34 × 42 × 26 in</span>
+      <span class="chip"><b>Capacity</b>17.7 + 8.9 = 26.6 cu ft</span>
+      <span class="chip"><b>Sources</b>spec sheet · SM MFL62188073 · OM</span>
     </div>
   </div>
 </div>
 
-<div class="hud" id="caption">
+<div class="hud" id="controls">
   <div class="panel">
-    <div class="label">Confidence: mixed</div>
-    <p><strong>Envelope, depths (w/o door 29 in · w/o handles 32⅞ · w/ handles 35⅜), bar handles, hidden top hinges, dispenser on the left door, Door-in-Door on the right</strong> are confirmed from LG's spec sheet, service manual (MFL62188073) and owner's manual. Door widths are derived from LG's door-open figures (≈17.6 in each, 50/50). <strong>Dispenser recess size, freezer-drawer front height, bar diameter, kick grille</strong> are not in any LG document — still placeholder. Interior (shelves, crispers, bins, ice maker, freezer drawers) is the next layer; see <code>cad/spec/</code> in the repo.</p>
+    <div class="label">View</div>
+    <div class="seg" role="group" aria-label="View state" style="margin-top:6px">
+      <button id="v-closed" aria-pressed="true">Closed</button>
+      <button id="v-open" aria-pressed="false">Open</button>
+      <button id="v-ghost" aria-pressed="false">Ghost</button>
+    </div>
+    <div class="range"><span>Doors</span><input id="doorAngle" type="range" min="0" max="120" value="0" aria-label="Door open angle"><span id="doorAngleV" class="mono">0°</span></div>
+    <div class="label" style="margin-top:12px">Layers</div>
+    <div class="layers" id="layers"></div>
+    <div class="range" style="margin-top:12px"><button id="resetView" class="mono" style="flex:1;border:1px solid var(--line);background:var(--surface-solid);color:var(--ink);border-radius:6px;padding:6px;cursor:pointer;font-size:11px">Reset camera</button></div>
+  </div>
+</div>
+
+<div class="hud" id="parts">
+  <div class="panel">
+    <header><span class="label">Parts modeled</span><span class="count" id="pcount"></span></header>
+    <input id="filter" type="search" placeholder="Filter by name or part #" aria-label="Filter parts">
+    <div id="plist"></div>
+  </div>
+</div>
+
+<div class="hud" id="readout">
+  <div class="panel">
+    <div class="name" id="r-name">Hover a part</div>
+    <div class="meta" id="r-meta">Every mesh carries its LG part number and a confidence tag — C confirmed in an LG document, P placeholder geometry.</div>
+    <div class="dims" id="r-dims"></div>
+    <div class="note" id="r-note"></div>
   </div>
 </div>
 
 <div class="hud" id="hint">
-  <div class="panel"><kbd>drag</kbd> orbit <kbd>scroll</kbd> zoom</div>
+  <div class="panel"><kbd>drag</kbd> orbit <kbd>scroll</kbd> zoom <kbd>click</kbd> pin part</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"></script>
@@ -159,35 +200,45 @@
 (function(){
   "use strict";
 
-  // ---------------------------------------------------------------
-  // Reference dimensions (mm). Source: LG French-door class spec
-  // sheets + industry-standard proportions — see on-page caption
-  // for which figures are verified vs. representative.
-  // ---------------------------------------------------------------
+  // =================================================================
+  // Dimensions (mm). Tags: C = LG document, D = derived from LG numbers,
+  // P = placeholder. See cad/spec/dimensions.md for sources.
+  // =================================================================
   const MM = {
-    EXT_W: 908,      // 35.75in exterior width — LG spec sheet, confirmed
-    EXT_H: 1772,      // 69.75in to top of hinge — LG spec sheet, confirmed
-    DOOR_THICK: 98,   // 835mm (32.875in) without-handles depth minus cabinet-only depth — LG spec sheet, confirmed
-    CABINET_D: 737,   // 29in without-door depth — LG spec sheet, confirmed
-    KICK_H: 80,       // recessed base grille height — placeholder, no diagram found
-    FZ_H: 530,        // freezer drawer front height — placeholder, no diagram found
-    GAP_H: 10,        // reveal between freezer drawer and doors — placeholder
-    CENTER_GAP: 6,     // vertical seam between the two doors — placeholder
-    LEFT_DOOR_FRAC: 0.5, // LG door-open figures (47⅝ − 29 = 18⅝ in incl. hinge offset; 1¾ in past each side at 90°) imply equal doors ≈17.6 in — inferred from spec sheet
-    HANDLE_PROTRUSION: 63.5, // 35.375in (w/ handles) − 32.875in (w/o) = 2.5in — LG service manual dim. A−B, confirmed
-    HANDLE_BAR_DIA: 28   // bar handle diameter — placeholder, not in any LG doc
+    EXT_W: 908,          // C  35¾ in
+    CASE_H: 1737,        // C  68⅜ in to top of case
+    HINGE_TOP: 1772,     // C  69¾ in to top of hinge cover
+    CAB_D: 737,          // C  29 in without door
+    DOOR_T: 98,          // D  32⅞ − 29 in
+    HANDLE_P: 63.5,      // D  35⅜ − 32⅞ in
+    HANDLE_DIA: 28,      // P
+    KICK_H: 80,          // P
+    FZ_H: 530,           // P  photo-proportion ≈ 20–21 in
+    GAP_H: 10,           // P
+    TOP_REVEAL: 15,      // P
+    CENTER_GAP: 6,       // P
+    WALL_SIDE: 22,       // D  (908 − 864)/2 if the README's 34 in opening holds
+    WALL_TOP: 33,        // P
+    WALL_BACK: 77,       // D  737 − 660 (schema Z max)
+    FF_W: 864, FF_H: 1066, FF_D: 660,  // README / sql/schema.sql — unverified against LG, must be measured
+    FZ_FLOOR: 100,       // P
+    DIV_T: 38,           // P  fridge/freezer divider
   };
-  MM.EXT_D = MM.CABINET_D + MM.DOOR_THICK;
-  MM.DOOR_H = MM.EXT_H - 20 - MM.GAP_H - MM.FZ_H - MM.KICK_H; // 20mm top reveal
-  MM.DOOR_Y0 = MM.KICK_H + MM.FZ_H + MM.GAP_H;
-  MM.DOOR_Y1 = MM.DOOR_Y0 + MM.DOOR_H;
-  const doorSpan = MM.EXT_W - MM.CENTER_GAP;
-  MM.LEFT_W = doorSpan * MM.LEFT_DOOR_FRAC;
-  MM.RIGHT_W = doorSpan * (1 - MM.LEFT_DOOR_FRAC);
+  MM.DOOR_Y0 = MM.KICK_H + MM.FZ_H + MM.GAP_H;                 // 620
+  MM.DOOR_H  = MM.CASE_H - MM.TOP_REVEAL - MM.DOOR_Y0;          // 1102
+  MM.DOOR_Y1 = MM.DOOR_Y0 + MM.DOOR_H;                          // 1722
+  MM.DOOR_W  = (MM.EXT_W - MM.CENTER_GAP)/2;                    // 451  (≈17.75 in, D)
+  MM.FF_Y0   = MM.DOOR_Y0 + (MM.DOOR_H - MM.FF_H)/2;            // 638
+  MM.FF_Y1   = MM.FF_Y0 + MM.FF_H;                              // 1704
+  MM.FF_Z0   = MM.CAB_D - MM.FF_D;                              // 77
+  MM.FZ_Y1   = MM.FF_Y0 - MM.DIV_T;                             // 600
 
-  // ---------------------------------------------------------------
-  // Theme
-  // ---------------------------------------------------------------
+  const inch = mm => (mm/25.4).toFixed(2);
+  const fmt = (w,h,d) => `${w} × ${h} × ${d} mm  ·  ${inch(w)} × ${inch(h)} × ${inch(d)} in`;
+
+  // =================================================================
+  // Theme / renderer / camera
+  // =================================================================
   function isDark(){
     const t = document.documentElement.getAttribute('data-theme');
     if (t === 'dark') return true;
@@ -196,11 +247,8 @@
   }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ---------------------------------------------------------------
-  // Renderer / scene / camera
-  // ---------------------------------------------------------------
   const canvas = document.getElementById('gl');
-  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -209,378 +257,524 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-
-  const camera = new THREE.PerspectiveCamera(32, innerWidth/innerHeight, 10, 20000);
-  const target = new THREE.Vector3(0, MM.EXT_H*0.46, MM.EXT_D*0.45);
-
-  // Manual orbit controls (spherical, damped) — no OrbitControls module needed.
-  const orbit = {
-    radius: 2600, minR: 1400, maxR: 5200,
-    theta: 0.62,        // azimuth
-    phi: 1.28,          // polar (from +Y)
-    targetTheta: 0.62, targetPhi: 1.28, targetRadius: 2600,
-    autoRotate: !reducedMotion,
-  };
-  function sphericalToCamera(){
-    const sp = Math.sin(orbit.phi), cp = Math.cos(orbit.phi);
-    camera.position.set(
-      target.x + orbit.radius * sp * Math.sin(orbit.theta),
-      target.y + orbit.radius * cp,
-      target.z + orbit.radius * sp * Math.cos(orbit.theta)
-    );
+  const camera = new THREE.PerspectiveCamera(32, innerWidth/innerHeight, 10, 30000);
+  const target = new THREE.Vector3(0, MM.CASE_H*0.48, MM.CAB_D*0.5);
+  const HOME = {radius:3000, theta:0.62, phi:1.28};
+  const orbit = {radius:HOME.radius, theta:HOME.theta, phi:HOME.phi, tR:HOME.radius, tT:HOME.theta, tP:HOME.phi, minR:1200, maxR:7000, autoRotate:!reducedMotion};
+  function placeCamera(){
+    const sp=Math.sin(orbit.phi), cp=Math.cos(orbit.phi);
+    camera.position.set(target.x+orbit.radius*sp*Math.sin(orbit.theta), target.y+orbit.radius*cp, target.z+orbit.radius*sp*Math.cos(orbit.theta));
     camera.lookAt(target);
   }
-  sphericalToCamera();
+  placeCamera();
 
-  // ---------------------------------------------------------------
-  // Procedural textures
-  // ---------------------------------------------------------------
-  function brushedMetalTexture(dark){
-    const w=512,h=512, c=document.createElement('canvas'); c.width=w;c.height=h;
-    const ctx=c.getContext('2d');
-    const base = dark ? '#9aa3a6' : '#c7cdd0';
-    ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
-    for(let i=0;i<9000;i++){
-      const x = Math.random()*w;
-      const len = 40+Math.random()*160;
-      const y0 = Math.random()*h;
-      const shade = Math.random()*20-10;
-      ctx.strokeStyle = `rgba(${shade>0?255:0},${shade>0?255:0},${shade>0?255:0},${Math.abs(shade)/140})`;
-      ctx.lineWidth = 0.6;
-      ctx.beginPath(); ctx.moveTo(x,y0); ctx.lineTo(x, y0+len); ctx.stroke();
-    }
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.anisotropy = 4;
-    return tex;
+  // =================================================================
+  // Textures
+  // =================================================================
+  function brushedTex(dark){
+    const w=512,h=512,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
+    ctx.fillStyle = dark?'#9aa3a6':'#c7cdd0'; ctx.fillRect(0,0,w,h);
+    for(let i=0;i<9000;i++){const x=Math.random()*w,len=40+Math.random()*160,y0=Math.random()*h,s=Math.random()*20-10;
+      ctx.strokeStyle=`rgba(${s>0?255:0},${s>0?255:0},${s>0?255:0},${Math.abs(s)/140})`;ctx.lineWidth=0.6;ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,y0+len);ctx.stroke();}
+    const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;
   }
-  function grilleTexture(){
-    const w=256,h=64,c=document.createElement('canvas');c.width=w;c.height=h;
-    const ctx=c.getContext('2d');
-    ctx.fillStyle='#1a1c1d'; ctx.fillRect(0,0,w,h);
-    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=2;
-    for(let y=6;y<h;y+=8){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  function grilleTex(){
+    const w=256,h=64,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
+    ctx.fillStyle='#1a1c1d';ctx.fillRect(0,0,w,h);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=2;
+    for(let y=6;y<h;y+=8){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
     return new THREE.CanvasTexture(c);
   }
-  function equirectEnvTexture(dark){
-    const w=512,h=256, c=document.createElement('canvas'); c.width=w;c.height=h;
-    const ctx=c.getContext('2d');
-    const g = ctx.createLinearGradient(0,0,0,h);
-    if(dark){
-      g.addColorStop(0,'#2a3438'); g.addColorStop(0.35,'#151b1e'); g.addColorStop(1,'#050708');
-    } else {
-      g.addColorStop(0,'#ffffff'); g.addColorStop(0.35,'#dfe6e8'); g.addColorStop(1,'#aab4b7');
-    }
-    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
-    // soft horizon band for a studio-floor feel
-    ctx.fillStyle = dark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.5)';
-    ctx.fillRect(0, h*0.62, w, h*0.06);
-    const tex = new THREE.CanvasTexture(c);
-    tex.mapping = THREE.EquirectangularReflectionMapping;
-    tex.encoding = THREE.sRGBEncoding;
-    return tex;
+  function envTex(dark){
+    const w=512,h=256,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
+    const g=ctx.createLinearGradient(0,0,0,h);
+    if(dark){g.addColorStop(0,'#2a3438');g.addColorStop(0.35,'#151b1e');g.addColorStop(1,'#050708');}
+    else{g.addColorStop(0,'#ffffff');g.addColorStop(0.35,'#dfe6e8');g.addColorStop(1,'#aab4b7');}
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=dark?'rgba(0,0,0,0.35)':'rgba(255,255,255,0.5)';ctx.fillRect(0,h*0.62,w,h*0.06);
+    const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;t.encoding=THREE.sRGBEncoding;return t;
   }
-  function textPlaneTexture(text, opts){
-    opts = opts || {};
-    const w = opts.w||256, h = opts.h||64;
-    const c = document.createElement('canvas'); c.width=w;c.height=h;
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = opts.color || 'rgba(80,90,92,0.8)';
-    ctx.font = (opts.weight||600)+' '+(opts.size||34)+'px "Public Sans", sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.letterSpacing = (opts.spacing||'2px');
-    ctx.fillText(text, w/2, h/2);
-    const tex = new THREE.CanvasTexture(c);
-    tex.encoding = THREE.sRGBEncoding;
-    return tex;
+  function textTex(text,size,color){
+    const w=256,h=64,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
+    ctx.fillStyle=color;ctx.font=`700 ${size}px "Public Sans", sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,w/2,h/2);
+    const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
   }
 
-  // ---------------------------------------------------------------
-  // Environment / background
-  // ---------------------------------------------------------------
-  let envTex = equirectEnvTexture(isDark());
-  scene.background = envTex;
-  scene.environment = envTex;
+  let env = envTex(isDark());
+  scene.background = env; scene.environment = env;
 
-  // ---------------------------------------------------------------
-  // Lighting
-  // ---------------------------------------------------------------
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x30363a, 0.55);
-  scene.add(hemi);
-
-  const key = new THREE.DirectionalLight(0xfff4e8, 1.35);
-  key.position.set(1400, 2200, 1600);
-  key.castShadow = true;
-  key.shadow.mapSize.set(2048,2048);
-  key.shadow.camera.near = 100; key.shadow.camera.far = 6000;
-  key.shadow.camera.left=-1400; key.shadow.camera.right=1400;
-  key.shadow.camera.top=1400; key.shadow.camera.bottom=-1400;
-  key.shadow.bias=-0.0008;
+  // =================================================================
+  // Lights + ground
+  // =================================================================
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x30363a, 0.55));
+  const key = new THREE.DirectionalLight(0xfff4e8, 1.3);
+  key.position.set(1400, 2400, 1800); key.castShadow = true;
+  key.shadow.mapSize.set(2048,2048); key.shadow.camera.near=100; key.shadow.camera.far=8000;
+  key.shadow.camera.left=-1800; key.shadow.camera.right=1800; key.shadow.camera.top=1800; key.shadow.camera.bottom=-1800; key.shadow.bias=-0.0008;
   scene.add(key);
+  const fill = new THREE.DirectionalLight(0xdce8f5, 0.5); fill.position.set(-1800, 900, 900); scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xbfe9ff, 0.55); rim.position.set(-400, 1600, -2000); scene.add(rim);
+  const cavityLight = new THREE.PointLight(0xffffff, 0.0, 1600); cavityLight.position.set(0, MM.FF_Y1-60, MM.CAB_D-200); scene.add(cavityLight);
 
-  const fill = new THREE.DirectionalLight(0xdce8f5, 0.55);
-  fill.position.set(-1800, 900, 900);
-  scene.add(fill);
+  const groundMat = new THREE.ShadowMaterial({opacity:isDark()?0.45:0.28});
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(12000,12000), groundMat);
+  ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
 
-  const rim = new THREE.DirectionalLight(0xbfe9ff, 0.6);
-  rim.position.set(-400, 1600, -2000);
-  scene.add(rim);
-
-  // soft "softbox" glow plane above/front, purely emissive, no cast
-  const softbox = new THREE.Mesh(
-    new THREE.PlaneGeometry(1600,900),
-    new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.05, side:THREE.DoubleSide})
-  );
-  softbox.position.set(0, 1700, 2400);
-  softbox.lookAt(0, MM.EXT_H*0.5, 0);
-  scene.add(softbox);
-
-  // ---------------------------------------------------------------
-  // Ground (studio floor, soft shadow catcher)
-  // ---------------------------------------------------------------
-  const groundMat = new THREE.ShadowMaterial({opacity: isDark() ? 0.45 : 0.28});
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000,9000), groundMat);
-  ground.rotation.x = -Math.PI/2;
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  // ---------------------------------------------------------------
-  // Fridge group
-  // ---------------------------------------------------------------
-  const fridge = new THREE.Group();
-  scene.add(fridge);
-
+  // =================================================================
+  // Materials
+  // =================================================================
   const dark = isDark();
-  const steelTex = brushedMetalTexture(dark);
-  steelTex.repeat.set(2,2);
-  const steelMat = new THREE.MeshPhysicalMaterial({
-    color: dark ? 0xb7bdc0 : 0xd3d8da,
-    metalness: 0.72, roughness: 0.42,
-    clearcoat: 0.18, clearcoatRoughness: 0.35,
-    bumpMap: steelTex, bumpScale: 0.35,
-    envMapIntensity: 1.1
-  });
-  const steelMatDoor = steelMat.clone();
-  steelMatDoor.bumpMap = brushedMetalTexture(dark); steelMatDoor.bumpMap.repeat.set(1,3);
+  const steel = new THREE.MeshPhysicalMaterial({color:dark?0xb7bdc0:0xd3d8da, metalness:0.72, roughness:0.42, clearcoat:0.18, clearcoatRoughness:0.35, bumpMap:brushedTex(dark), bumpScale:0.35, envMapIntensity:1.1});
+  steel.bumpMap.repeat.set(2,2);
+  const steelDoor = steel.clone(); steelDoor.bumpMap = brushedTex(dark); steelDoor.bumpMap.repeat.set(1,3);
+  const bar = steel.clone(); bar.bumpMap=null; bar.roughness=0.3; bar.metalness=0.85;
+  const liner = new THREE.MeshStandardMaterial({color:0xf1f3f3, roughness:0.55, metalness:0.02});
+  const linerDoor = new THREE.MeshStandardMaterial({color:0xeceff0, roughness:0.6, metalness:0.02});
+  const clearPlastic = new THREE.MeshPhysicalMaterial({color:0xcfe3e6, roughness:0.25, metalness:0, transparent:true, opacity:0.42, clearcoat:0.5, side:THREE.DoubleSide});
+  const glass = new THREE.MeshPhysicalMaterial({color:0xd9eef0, roughness:0.05, metalness:0, transparent:true, opacity:0.28, clearcoat:1, side:THREE.DoubleSide});
+  const darkTrim = new THREE.MeshStandardMaterial({color:0x1c1f20, metalness:0.4, roughness:0.6});
+  const greyPlastic = new THREE.MeshStandardMaterial({color:0x8d9497, roughness:0.7});
+  const grille = new THREE.MeshStandardMaterial({map:grilleTex(), color:0x2a2c2d, metalness:0.2, roughness:0.8});
+  const gasket = new THREE.MeshStandardMaterial({color:0x0c0d0d, roughness:0.9});
+  const dispPanel = new THREE.MeshPhysicalMaterial({color:0x15181a, metalness:0.5, roughness:0.5, clearcoat:0.2});
+  const ledMat = new THREE.MeshBasicMaterial({color:0xeaf6ff});
+  const teal = new THREE.MeshBasicMaterial({color:0x35c2c8});
+  const blackMetal = new THREE.MeshStandardMaterial({color:0x202325, metalness:0.7, roughness:0.45});
+  const copper = new THREE.MeshStandardMaterial({color:0xb87333, metalness:0.9, roughness:0.35});
+  const alu = new THREE.MeshStandardMaterial({color:0xc9cdd0, metalness:0.8, roughness:0.4});
+  const pcb = new THREE.MeshStandardMaterial({color:0x1e5c3a, roughness:0.6});
+  const foam = new THREE.MeshStandardMaterial({color:0xe8dfb8, roughness:0.95});
+  const highlight = new THREE.MeshBasicMaterial({color:0xff6a1f, transparent:true, opacity:0.55, depthTest:false});
 
-  const darkTrimMat = new THREE.MeshStandardMaterial({color:0x1c1f20, metalness:0.4, roughness:0.6});
-  const grilleMat = new THREE.MeshStandardMaterial({map:grilleTexture(), color:0x2a2c2d, metalness:0.2, roughness:0.8});
-  const gasketMat = new THREE.MeshStandardMaterial({color:0x0c0d0d, metalness:0.1, roughness:0.9});
-  const dispenserPanelMat = new THREE.MeshPhysicalMaterial({color:0x15181a, metalness:0.5, roughness:0.5, clearcoat:0.2});
-  const dispenserGlowMat = new THREE.MeshBasicMaterial({color:0x35c2c8});
-  const logoMat = new THREE.MeshBasicMaterial({map: textPlaneTexture('LG', {size:30, color:'rgba(140,148,150,0.85)', weight:700}), transparent:true});
+  const ghostable = [steel, steelDoor, liner, linerDoor, grille, gasket, dispPanel, foam];
 
-  function box(w,h,d,mat){
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
-    m.castShadow = true; m.receiveShadow = true;
-    return m;
+  // =================================================================
+  // Part registry
+  // =================================================================
+  const LAYERS = {
+    shell:   {name:'Cabinet shell',   color:'#9fb0b4'},
+    doors:   {name:'Doors & drawer front', color:'#6b7c82'},
+    fresh:   {name:'Fresh-food interior', color:'#1f8a90'},
+    freezer: {name:'Freezer interior', color:'#4f9fd6'},
+    mech:    {name:'Refrigeration & controls', color:'#ff6a1f'},
+    base:    {name:'Hinges, base & trim', color:'#c48b2c'},
+  };
+  const G = {}; Object.keys(LAYERS).forEach(k=>{ G[k]=new THREE.Group(); G[k].name=k; scene.add(G[k]); });
+  const parts = []; // {mesh(es), name, pn, layer, tag, dims, note}
+  function reg(obj, meta){
+    const list = []; obj.traverse(o=>{ if(o.isMesh) list.push(o); });
+    const p = Object.assign({objs:list, root:obj}, meta);
+    list.forEach(m=>{ m.userData.part = p; });
+    parts.push(p);
+    return obj;
   }
+  function box(w,h,d,mat){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.castShadow=true; m.receiveShadow=true; return m; }
+  function cyl(r,len,mat,seg){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,seg||20),mat); m.castShadow=true; return m; }
+  function at(m,x,y,z){ m.position.set(x,y,z); return m; }
 
-  // Cabinet body (fills full envelope minus the door skin at the front)
-  const cabinet = box(MM.EXT_W, MM.EXT_H, MM.CABINET_D, steelMat);
-  cabinet.position.set(0, MM.EXT_H/2, MM.CABINET_D/2);
-  fridge.add(cabinet);
+  // =================================================================
+  // CABINET SHELL — five panels + divider (so the cavities are real)
+  // =================================================================
+  const W=MM.EXT_W, H=MM.CASE_H, D=MM.CAB_D;
+  const sideL = at(box(MM.WALL_SIDE, H-MM.KICK_H, D, steel), -W/2+MM.WALL_SIDE/2, MM.KICK_H+(H-MM.KICK_H)/2, D/2);
+  const sideR = at(box(MM.WALL_SIDE, H-MM.KICK_H, D, steel), W/2-MM.WALL_SIDE/2, MM.KICK_H+(H-MM.KICK_H)/2, D/2);
+  const top = at(box(W, MM.WALL_TOP, D, steel), 0, H-MM.WALL_TOP/2, D/2);
+  const back = at(box(W, H-MM.KICK_H, MM.WALL_BACK, steel), 0, MM.KICK_H+(H-MM.KICK_H)/2, MM.WALL_BACK/2);
+  const floor = at(box(W, MM.FZ_FLOOR-MM.KICK_H, D, steel), 0, MM.KICK_H+(MM.FZ_FLOOR-MM.KICK_H)/2, D/2);
+  const divider = at(box(W-2*MM.WALL_SIDE, MM.DIV_T, D-MM.WALL_BACK, foam), 0, MM.FZ_Y1+MM.DIV_T/2, MM.WALL_BACK+(D-MM.WALL_BACK)/2);
+  const shell = new THREE.Group(); shell.add(sideL, sideR, top, back, floor);
+  G.shell.add(reg(shell, {name:'Cabinet (PCM steel outer case, PU-foam insulated)', pn:'—', layer:'shell', tag:'C', dims:fmt(W,H,D), note:'Outer case dimensions from LG spec sheet. Wall thickness is not published; 22 mm sides assumed from the README\'s 34 in opening.'}));
+  G.shell.add(reg(divider, {name:'Fridge / freezer divider (foam)', pn:'—', layer:'shell', tag:'P', dims:fmt(W-44, MM.DIV_T, D-MM.WALL_BACK)}));
+  // inner liners (ABS) — fresh food and freezer
+  const ffLiner = new THREE.Group();
+  const lt=3;
+  ffLiner.add(at(box(MM.FF_W, lt, MM.FF_D, liner), 0, MM.FF_Y1-lt/2, MM.FF_Z0+MM.FF_D/2));
+  ffLiner.add(at(box(MM.FF_W, lt, MM.FF_D, liner), 0, MM.FF_Y0+lt/2, MM.FF_Z0+MM.FF_D/2));
+  ffLiner.add(at(box(lt, MM.FF_H, MM.FF_D, liner), -MM.FF_W/2+lt/2, MM.FF_Y0+MM.FF_H/2, MM.FF_Z0+MM.FF_D/2));
+  ffLiner.add(at(box(lt, MM.FF_H, MM.FF_D, liner),  MM.FF_W/2-lt/2, MM.FF_Y0+MM.FF_H/2, MM.FF_Z0+MM.FF_D/2));
+  ffLiner.add(at(box(MM.FF_W, MM.FF_H, lt, liner), 0, MM.FF_Y0+MM.FF_H/2, MM.FF_Z0+lt/2));
+  G.shell.add(reg(ffLiner, {name:'Fresh-food inner liner (ABS)', pn:'—', layer:'shell', tag:'P', dims:fmt(MM.FF_W,MM.FF_H,MM.FF_D), note:'Cavity = README 34 × 42 in opening × schema.sql 660 mm depth. Not in any LG document — measure on a unit (issue #12).'}));
+  const fzLiner = new THREE.Group();
+  const fzW=MM.FF_W, fzH=MM.FZ_Y1-MM.FZ_FLOOR, fzD=MM.FF_D;
+  fzLiner.add(at(box(fzW, lt, fzD, liner), 0, MM.FZ_FLOOR+lt/2, MM.FF_Z0+fzD/2));
+  fzLiner.add(at(box(fzW, lt, fzD, liner), 0, MM.FZ_Y1-lt/2, MM.FF_Z0+fzD/2));
+  fzLiner.add(at(box(lt, fzH, fzD, liner), -fzW/2+lt/2, MM.FZ_FLOOR+fzH/2, MM.FF_Z0+fzD/2));
+  fzLiner.add(at(box(lt, fzH, fzD, liner),  fzW/2-lt/2, MM.FZ_FLOOR+fzH/2, MM.FF_Z0+fzD/2));
+  fzLiner.add(at(box(fzW, fzH, lt, liner), 0, MM.FZ_FLOOR+fzH/2, MM.FF_Z0+lt/2));
+  G.shell.add(reg(fzLiner, {name:'Freezer inner liner (ABS)', pn:'—', layer:'shell', tag:'P', dims:fmt(fzW,fzH,fzD)}));
 
-  // Recessed base grille (toe-kick), set back from the door face
-  const kickDepth = 46;
-  const kick = box(MM.EXT_W-40, MM.KICK_H-10, kickDepth, grilleMat);
-  kick.position.set(0, (MM.KICK_H-10)/2 + 3, MM.EXT_D - kickDepth/2 - 90);
-  fridge.add(kick);
+  // =================================================================
+  // BASE, HINGES, TRIM
+  // =================================================================
+  const kick = at(box(W-40, MM.KICK_H-12, 40, grille), 0, MM.KICK_H/2+2, D+MM.DOOR_T-95);
+  G.base.add(reg(kick, {name:'Toe grille / lower cover', pn:'ACQ85891302', layer:'base', tag:'P', dims:fmt(W-40, MM.KICK_H-12, 40), note:'Part confirmed; height and setback not published.'}));
+  [[-1,'L'],[1,'R']].forEach(([s,side])=>{
+    const leg = at(cyl(16, MM.KICK_H, blackMetal), s*(W/2-70), MM.KICK_H/2, D-60);
+    G.base.add(reg(leg, {name:`Leveling leg, front ${side}`, pn:'AFC73349801', layer:'base', tag:'C', note:'Turn left to raise (OM). Range not published.'}));
+    const roller = cyl(28, 24, darkTrim); roller.rotation.z=Math.PI/2; at(roller, s*(W/2-90), 28, 120);
+    G.base.add(reg(roller, {name:`Rear roller ${side}`, pn:'MHA62513601', layer:'base', tag:'C'}));
+    // upper hinge: plate on case top + pin + lever, under a cover
+    const hg = new THREE.Group();
+    hg.add(at(box(120, 6, 110, alu), s*(W/2-70), H+3, D+20));
+    const pin = cyl(6, 30, alu); at(pin, s*(W/2-24), H-12, D+22); hg.add(pin);
+    const lever = at(box(40, 8, 18, darkTrim), s*(W/2-95), H+10, D-10); hg.add(lever);
+    G.base.add(reg(hg, {name:`Upper hinge ${side} (plate, pin, rotating lever latch)`, pn: side==='L'?'AEH74216501':'AEH73816806', layer:'base', tag:'C', note:'SM §3-1: rotate lever (CCW left / CW right), lift hinge out; door lifts off middle pin. Left hinge also routes the water tube and two harnesses.'}));
+    const cover = at(box(110, MM.HINGE_TOP-H-6, 130, darkTrim), s*(W/2-65), H+6+(MM.HINGE_TOP-H-6)/2, D-30);
+    G.base.add(reg(cover, {name:`Hinge cover ${side}`, pn: side==='L'?'ACQ86274031':'ACQ86664715', layer:'base', tag:'C', dims:fmt(110, MM.HINGE_TOP-H-6, 130)}));
+    // middle hinge: bracket at door bottom with pin up
+    const mh = new THREE.Group();
+    mh.add(at(box(70, 8, 80, alu), s*(W/2-45), MM.DOOR_Y0-5, D+15));
+    const mpin = cyl(7, 40, alu); at(mpin, s*(W/2-24), MM.DOOR_Y0+15, D+22); mh.add(mpin);
+    const sleeve = cyl(9, 14, greyPlastic); at(sleeve, s*(W/2-24), MM.DOOR_Y0+2, D+22); mh.add(sleeve);
+    G.base.add(reg(mh, {name:`Middle hinge ${side} (pin + plastic sleeve${side==='L'?', height-adjust nut':', snap rings'})`, pn: side==='L'?'AEH73816902':'AEH73816904', layer:'base', tag:'C'}));
+  });
+  const stopper = at(box(30, 10, 30, greyPlastic), 0, MM.DOOR_Y0-5, D+40);
+  G.base.add(reg(stopper, {name:'Door stopper', pn:'AJC73112301', layer:'base', tag:'C'}));
+  const emblem = new THREE.Mesh(new THREE.PlaneGeometry(120,30), new THREE.MeshBasicMaterial({map:textTex('LG',30,'rgba(140,148,150,0.85)'), transparent:true}));
 
-  // Freezer drawer front
-  const freezer = box(MM.EXT_W, MM.FZ_H, MM.DOOR_THICK, steelMatDoor);
-  freezer.position.set(0, MM.KICK_H + MM.FZ_H/2, MM.CABINET_D + MM.DOOR_THICK/2);
-  fridge.add(freezer);
-
-  // freezer drawer bar handle (AED73593102), horizontal, near top of drawer front — added after barHandle() is defined below
-  const fzHandleY = MM.KICK_H + MM.FZ_H - 70;
-
-  // reveal gasket line between freezer and doors
-  const revealY = MM.KICK_H + MM.FZ_H + MM.GAP_H/2;
-  const reveal = box(MM.EXT_W, MM.GAP_H, MM.DOOR_THICK+4, gasketMat);
-  reveal.position.set(0, revealY, MM.CABINET_D + MM.DOOR_THICK/2);
-  fridge.add(reveal);
-
-  // Doors
-  const leftX0 = -MM.EXT_W/2, leftX1 = leftX0 + MM.LEFT_W;
-  const rightX1 = MM.EXT_W/2, rightX0 = rightX1 - MM.RIGHT_W;
-  const doorCenterY = (MM.DOOR_Y0 + MM.DOOR_Y1)/2;
-  const doorZ = MM.CABINET_D + MM.DOOR_THICK/2;
-
-  const leftDoor = box(MM.LEFT_W, MM.DOOR_H, MM.DOOR_THICK, steelMatDoor);
-  leftDoor.position.set((leftX0+leftX1)/2, doorCenterY, doorZ);
-  fridge.add(leftDoor);
-
-  const rightDoor = box(MM.RIGHT_W, MM.DOOR_H, MM.DOOR_THICK, steelMatDoor);
-  rightDoor.position.set((rightX0+rightX1)/2, doorCenterY, doorZ);
-  fridge.add(rightDoor);
-
-  // center seam gasket
-  const seam = box(MM.CENTER_GAP, MM.DOOR_H, MM.DOOR_THICK+2, gasketMat);
-  seam.position.set((leftX1+rightX0)/2, doorCenterY, doorZ);
-  fridge.add(seam);
-
-  // Bolt-on bar handles (AED73593202 family) on each door's inner edge.
-  // Stainless bar on two standoff studs; total protrusion = MM.HANDLE_PROTRUSION.
-  const doorFaceZ = MM.CABINET_D + MM.DOOR_THICK;
-  const barMat = steelMat.clone(); barMat.roughness = 0.3; barMat.metalness = 0.85; barMat.bumpMap = null;
-  function barHandle(length, vertical){
-    const g = new THREE.Group();
-    const r = MM.HANDLE_BAR_DIA/2;
-    const bar = new THREE.Mesh(new THREE.CylinderGeometry(r, r, length, 24), barMat);
-    bar.castShadow = true;
-    if(!vertical) bar.rotation.z = Math.PI/2;
-    bar.position.z = MM.HANDLE_PROTRUSION - r;
-    g.add(bar);
-    const studLen = MM.HANDLE_PROTRUSION - r;
-    [-1,1].forEach(s=>{
-      const stud = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, studLen, 16), barMat);
-      stud.rotation.x = Math.PI/2;
-      stud.castShadow = true;
-      if(vertical) stud.position.set(0, s*(length/2 - 60), studLen/2);
-      else stud.position.set(s*(length/2 - 60), 0, studLen/2);
-      g.add(stud);
-    });
+  // =================================================================
+  // DOORS — each in local coords: x 0 (hinge edge) → DOOR_W, y 0 → DOOR_H,
+  // z 0 (inner face) → DOOR_T (outer face). Left door at x=−W/2, right door
+  // mirrored (scale.x = −1) at x=+W/2. Rotation about the hinge axis.
+  // =================================================================
+  const doorHingeZ = 20;
+  function makeDoor(side){
+    const g = new THREE.Group(); g.name = side+'Door';
+    const s = side==='L' ? 1 : -1;
+    const Wd = MM.DOOR_W, Hd = MM.DOOR_H, T = MM.DOOR_T;
+    // door slab: steel skin + liner
+    const slab = new THREE.Group();
+    slab.add(at(box(Wd, Hd, T-12, steelDoor), Wd/2, Hd/2, 12+(T-12)/2));
+    slab.add(at(box(Wd-16, Hd-16, 12, linerDoor), Wd/2, Hd/2, 6));
+    reg(slab, {name:`${side==='L'?'Left':'Right'} refrigerator door (foam-filled, PCM stainless)`, pn: side==='L'?'ADD74296905':'ADC74665810', layer:'doors', tag:'C', dims:fmt(Wd,Hd,T), note:'Width derived from LG door-open figures (≈17.75 in each). Thickness = depth w/o handles − depth w/o door.'});
+    g.add(slab);
+    // gasket frame on inner face
+    const gk = new THREE.Group(); const gw=14;
+    gk.add(at(box(Wd-20, gw, 10, gasket), Wd/2, Hd-14, -5)); gk.add(at(box(Wd-20, gw, 10, gasket), Wd/2, 14, -5));
+    gk.add(at(box(gw, Hd-20, 10, gasket), 14, Hd/2, -5)); gk.add(at(box(gw, Hd-20, 10, gasket), Wd-14, Hd/2, -5));
+    reg(gk, {name:`Door gasket ${side}`, pn:'ADX73550627', layer:'doors', tag:'C', note:'Press-in channel on 4 sides (SM).'}); g.add(gk);
+    // bar handle on the center edge, standoff studs, set-screw locked
+    const hgrp = new THREE.Group();
+    const len = Hd*0.78, r = MM.HANDLE_DIA/2;
+    const b = cyl(r, len, bar, 24); at(b, Wd-58, Hd/2, T+MM.HANDLE_P-r); hgrp.add(b);
+    [-1,1].forEach(k=>{ const st = cyl(9, MM.HANDLE_P-r, bar, 16); st.rotation.x=Math.PI/2; at(st, Wd-58, Hd/2+k*(len/2-60), T+(MM.HANDLE_P-r)/2); hgrp.add(st); });
+    reg(hgrp, {name:`Bar handle ${side} (on 2 stud fasteners, ¼ in Allen; 3/32 in set screws)`, pn:'AED73593202', layer:'doors', tag:'C', dims:`Ø${MM.HANDLE_DIA} × ${Math.round(len)} mm, protrudes ${MM.HANDLE_P} mm (2½ in)`, note:'Bar diameter and length are placeholders; protrusion is LG dim A − B.'});
+    g.add(hgrp);
+    if(side==='L'){
+      // dispenser recess + control panel to its left + paddle
+      const dW=241, dH=356, cx=Wd*0.5, cy=Hd*0.55;
+      const dg = new THREE.Group();
+      dg.add(at(box(dW, dH, 20, dispPanel), cx, cy, T-10));
+      dg.add(at(box(dW*0.55, 14, 10, darkTrim), cx, cy-dH*0.28, T+2));
+      const led = new THREE.Mesh(new THREE.PlaneGeometry(dW*0.5, 16), teal); at(led, cx, cy+dH*0.32, T+0.6); dg.add(led);
+      const panel = at(box(60, 200, 3, dispPanel), cx-dW/2-45, cy+40, T+1); dg.add(panel);
+      reg(dg, {name:'Integrated tall dispenser (water / cubed / crushed), paddle, membrane control panel', pn:'ACQ86599630 / MFC62709701 / EBR78631903', layer:'doors', tag:'P', dims:fmt(dW,dH,20), note:'Location on left door and panel-left-of-recess are confirmed from LG photos; recess size and height are placeholders.'});
+      g.add(dg);
+      // in-door ice maker (Slim SpacePlus) + ice bin door on inner face
+      const ice = new THREE.Group();
+      ice.add(at(box(320, 430, 130, linerDoor), 210, Hd-260, -65));
+      ice.add(at(box(300, 200, 6, clearPlastic), 210, Hd-360, -134));
+      const auger = cyl(20, 260, greyPlastic); at(auger, 210, Hd-360, -70); ice.add(auger);
+      reg(ice, {name:'In-door ice maker (Slim SpacePlus): ice maker kit, bucket, auger motor', pn:'AEQ73110210 / AKC73249303 / EAU61083522', layer:'doors', tag:'C', dims:fmt(320,430,130), note:'3.5 lb/day, 2.8 lb bin (spec sheet). Box size is a placeholder.'});
+      g.add(ice);
+      // door bins: dairy corner, gallon bin, modular bin
+      const binL = (w,h,d,x,y,name,pn,tag)=>{ const bg=new THREE.Group();
+        bg.add(at(box(w,4,d,clearPlastic), x, y+2, -d/2)); bg.add(at(box(w,h,4,clearPlastic), x, y+h/2, -d+2));
+        bg.add(at(box(4,h,d,clearPlastic), x-w/2+2, y+h/2, -d/2)); bg.add(at(box(4,h,d,clearPlastic), x+w/2-2, y+h/2, -d/2));
+        reg(bg,{name,pn,layer:'doors',tag,dims:fmt(w,h,d)}); g.add(bg); };
+      binL(200, 120, 110, 130, Hd-560, 'Dairy Corner bin w/ lid (left door)', 'MAN63049001', 'P');
+      binL(419, 184, 130, Wd/2, 320, 'Gallon door bin, adjustable (left door)', 'MAN63048701', 'P');
+      binL(419, 120, 110, Wd/2, 120, 'Modular door bin (left door)', 'AAP73631702', 'P');
+      // foldable heated mullion on the center edge
+      const mul = at(box(24, Hd-40, 56, darkTrim), Wd-12, Hd/2, -28);
+      reg(mul, {name:'Foldable center mullion (flipper) w/ heater, auto-fold', pn:'AGU75188619 / MHY62044106', layer:'doors', tag:'C', note:'On the left door; heater 2.3–2.9 Ω (SM).'}); g.add(mul);
+    } else {
+      // Door-in-Door: outer panel seam, release button on handle, Home Bar case with bins on the inner face
+      const dw = Wd-80, dh = Hd*0.62, dx = Wd/2, dy = Hd*0.5+40;
+      const seam = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(dw, dh)), new THREE.LineBasicMaterial({color:0x2a2e30, transparent:true, opacity:0.6}));
+      at(seam, dx, dy, T+0.6); g.add(seam);
+      const btn = cyl(11, 6, darkTrim, 20); btn.rotation.x=Math.PI/2; at(btn, Wd-58, Hd/2+len/2-120, T+MM.HANDLE_P-r+12);
+      reg(btn, {name:'Door-in-Door release button (on handle)', pn:'MEB62915403', layer:'doors', tag:'C'}); g.add(btn);
+      const hb = new THREE.Group();
+      hb.add(at(box(dw, 6, 150, linerDoor), dx, dy-dh/2, -75)); hb.add(at(box(dw, 6, 150, linerDoor), dx, dy+dh/2, -75));
+      hb.add(at(box(6, dh, 150, linerDoor), dx-dw/2, dy, -75)); hb.add(at(box(6, dh, 150, linerDoor), dx+dw/2, dy, -75));
+      reg(hb, {name:'Door-in-Door "Home Bar" case (removable inner case, ColdSaver panel)', pn:'MBN63442501 / ADD74296801 / MDS64610508', layer:'doors', tag:'C', dims:fmt(dw,dh,150), note:'On the right door (OM). Case size is a placeholder.'});
+      g.add(hb);
+      const binR = (w,h,d,x,y,name,pn)=>{ const bg=new THREE.Group();
+        bg.add(at(box(w,4,d,clearPlastic), x, y+2, -d/2)); bg.add(at(box(w,h,4,clearPlastic), x, y+h/2, -d+2));
+        bg.add(at(box(4,h,d,clearPlastic), x-w/2+2, y+h/2, -d/2)); bg.add(at(box(4,h,d,clearPlastic), x+w/2-2, y+h/2, -d/2));
+        reg(bg,{name,pn,layer:'doors',tag:'P',dims:fmt(w,h,d)}); g.add(bg); };
+      binR(dw-30, 110, 120, dx, dy+dh/2-150, 'Cheese & butter bin (Door-in-Door)', 'MAN63048801');
+      binR(dw-30, 110, 120, dx, dy-40, 'Condiment bin (Door-in-Door)', 'MAN63048901');
+      binR(419, 184, 130, Wd/2, 120, 'Gallon door bin, adjustable (right door)', 'MAN63048701');
+      binR(dw-30, 100, 110, dx, Hd-170, 'Fixed door bin, upper (right door)', 'AAP73631802');
+      at(emblem, Wd/2, 70, T+0.6); reg(emblem, {name:'Name plate / emblem', pn:'MFT62346511', layer:'doors', tag:'C'}); g.add(emblem);
+    }
+    g.position.set(s*(-W/2), MM.DOOR_Y0, D+doorHingeZ);
+    g.scale.x = s;
+    // shift so local z=0 sits at the cabinet face, hinge axis at group origin
+    g.children.forEach(c=>{ c.position.z -= doorHingeZ; });
     return g;
   }
-  const fridgeHandleLen = MM.DOOR_H*0.78;
-  const handleInsetX = 58;
-  const leftHandle = barHandle(fridgeHandleLen, true);
-  leftHandle.position.set(leftX1 - handleInsetX, doorCenterY, doorFaceZ);
-  fridge.add(leftHandle);
-  const rightHandle = barHandle(fridgeHandleLen, true);
-  rightHandle.position.set(rightX0 + handleInsetX, doorCenterY, doorFaceZ);
-  fridge.add(rightHandle);
+  const leftDoor = makeDoor('L'), rightDoor = makeDoor('R');
+  G.doors.add(leftDoor, rightDoor);
+  const seamGap = at(box(MM.CENTER_GAP+2, MM.DOOR_H, MM.DOOR_T, gasket), 0, MM.DOOR_Y0+MM.DOOR_H/2, D+MM.DOOR_T/2);
+  G.doors.add(reg(seamGap, {name:'Center door seam (behind mullion)', pn:'—', layer:'doors', tag:'P'}));
+  const reveal = at(box(W, MM.GAP_H, MM.DOOR_T, gasket), 0, MM.KICK_H+MM.FZ_H+MM.GAP_H/2, D+MM.DOOR_T/2);
+  G.doors.add(reg(reveal, {name:'Reveal between freezer drawer and doors', pn:'—', layer:'doors', tag:'P'}));
 
-  // Door-in-Door ("Home Bar") release button on the right handle — owner's manual item 5
-  const didButton = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 6, 20), darkTrimMat);
-  didButton.rotation.x = Math.PI/2;
-  didButton.position.set(rightX0 + handleInsetX, doorCenterY + fridgeHandleLen/2 - 120, doorFaceZ + MM.HANDLE_PROTRUSION - MM.HANDLE_BAR_DIA/2 + 12);
-  fridge.add(didButton);
+  // =================================================================
+  // FREEZER DRAWER — front slides on rails; Durabase basket rides with it,
+  // upper tray on its own rails
+  // =================================================================
+  const fz = new THREE.Group(); fz.name='freezerDrawer';
+  const fzFront = new THREE.Group();
+  fzFront.add(at(box(W, MM.FZ_H, MM.DOOR_T-12, steelDoor), 0, MM.KICK_H+MM.FZ_H/2, D+12+(MM.DOOR_T-12)/2));
+  fzFront.add(at(box(W-16, MM.FZ_H-16, 12, linerDoor), 0, MM.KICK_H+MM.FZ_H/2, D+6));
+  reg(fzFront, {name:'Freezer drawer front (foam-filled)', pn:'ADC73928108 / ADD73719008', layer:'doors', tag:'C', dims:fmt(W,MM.FZ_H,MM.DOOR_T), note:'Front height is a placeholder (~20–21 in from photo proportion).'});
+  fz.add(fzFront);
+  const fzGasket = new THREE.Group(); const fg=14;
+  fzGasket.add(at(box(W-40, fg, 8, gasket), 0, MM.KICK_H+MM.FZ_H-14, D-4)); fzGasket.add(at(box(W-40, fg, 8, gasket), 0, MM.KICK_H+14, D-4));
+  fzGasket.add(at(box(fg, MM.FZ_H-20, 8, gasket), -W/2+24, MM.KICK_H+MM.FZ_H/2, D-4)); fzGasket.add(at(box(fg, MM.FZ_H-20, 8, gasket), W/2-24, MM.KICK_H+MM.FZ_H/2, D-4));
+  reg(fzGasket, {name:'Freezer door gasket', pn:'MDS64172922', layer:'doors', tag:'C'}); fz.add(fzGasket);
+  const fzh = new THREE.Group(); { const len=W*0.6, r=MM.HANDLE_DIA/2, y=MM.KICK_H+MM.FZ_H-70;
+    const b=cyl(r,len,bar,24); b.rotation.z=Math.PI/2; at(b,0,y,D+MM.DOOR_T+MM.HANDLE_P-r); fzh.add(b);
+    [-1,1].forEach(k=>{const st=cyl(9,MM.HANDLE_P-r,bar,16); st.rotation.x=Math.PI/2; at(st,k*(len/2-60),y,D+MM.DOOR_T+(MM.HANDLE_P-r)/2); fzh.add(st);}); }
+  reg(fzh, {name:'Freezer SmartPull bar handle (⅛ in set screws)', pn:'AED73593102', layer:'doors', tag:'C'}); fz.add(fzh);
+  // Durabase basket + divider (rides with the front)
+  const basket = new THREE.Group(); { const bw=W-2*MM.WALL_SIDE-60, bh=220, bd=520, by=MM.FZ_FLOOR+20, bz=D-40-bd/2;
+    basket.add(at(box(bw, 4, bd, clearPlastic), 0, by+2, bz)); basket.add(at(box(bw, bh, 4, clearPlastic), 0, by+bh/2, bz-bd/2+2)); basket.add(at(box(bw, bh, 4, clearPlastic), 0, by+bh/2, bz+bd/2-2));
+    basket.add(at(box(4, bh, bd, clearPlastic), -bw/2+2, by+bh/2, bz)); basket.add(at(box(4, bh, bd, clearPlastic), bw/2-2, by+bh/2, bz));
+    basket.add(at(box(4, bh-20, bd-20, clearPlastic), 0, by+bh/2, bz));
+    reg(basket, {name:'Lower drawer tray (Durabase) w/ side-to-side divider', pn:'AJP73594404 / MAK63227001', layer:'freezer', tag:'C', dims:fmt(bw,bh,bd), note:'Basket size is a placeholder.'}); }
+  fz.add(basket);
+  [-1,1].forEach(s=>{ const wheel = cyl(22, 18, greyPlastic); wheel.rotation.z=Math.PI/2; at(wheel, s*(W/2-MM.WALL_SIDE-60), MM.FZ_FLOOR+22, D-60);
+    fz.add(reg(wheel, {name:`Drawer roller wheel ${s<0?'L':'R'}`, pn:'AHJ72909001', layer:'freezer', tag:'C'})); });
+  G.doors.add(fz);
+  // upper pull-out tray + rails (freezer layer, slides half as far)
+  const tray = new THREE.Group(); { const tw=W-2*MM.WALL_SIDE-120, th=100, td=420, ty=MM.FZ_FLOOR+300, tz=D-60-td/2;
+    tray.add(at(box(tw, 4, td, clearPlastic), 0, ty+2, tz)); tray.add(at(box(tw, th, 4, clearPlastic), 0, ty+th/2, tz-td/2+2)); tray.add(at(box(tw, th, 4, clearPlastic), 0, ty+th/2, tz+td/2-2));
+    tray.add(at(box(4, th, td, clearPlastic), -tw/2+2, ty+th/2, tz)); tray.add(at(box(4, th, td, clearPlastic), tw/2-2, ty+th/2, tz));
+    reg(tray, {name:'Upper pull-out drawer tray', pn:'AJP73574504', layer:'freezer', tag:'C', dims:fmt(tw,th,td), note:'Tray size is a placeholder.'}); }
+  G.freezer.add(tray);
+  [-1,1].forEach(s=>{ const rail = at(box(12, 30, 560, alu), s*(W/2-MM.WALL_SIDE-8), MM.FZ_FLOOR+290, D-60-280);
+    G.freezer.add(reg(rail, {name:`Drawer slide rail ${s<0?'L':'R'}`, pn: s<0?'MGT61844004':'MGT61844003', layer:'freezer', tag:'C'}));
+    const guide = at(box(16, 40, 300, greyPlastic), s*(W/2-MM.WALL_SIDE-10), MM.FZ_FLOOR+120, D-200);
+    G.freezer.add(reg(guide, {name:`Drawer slide rail guide ${s<0?'L':'R'}`, pn:'AEC73637401', layer:'freezer', tag:'C'})); });
+  const gearBar = cyl(6, W-2*MM.WALL_SIDE-40, alu, 12); gearBar.rotation.z=Math.PI/2; at(gearBar, 0, MM.FZ_FLOOR+60, D-80);
+  G.freezer.add(reg(gearBar, {name:'Drawer sync bar + rack connectors ("gear ice")', pn:'ACJ73430105 / ACJ73230105', layer:'freezer', tag:'C', note:'Synchronizes the two rails (SM §3-19).'}));
+  const fzLed = new THREE.Mesh(new THREE.PlaneGeometry(160, 14), ledMat); fzLed.rotation.x=Math.PI/2; at(fzLed, 0, MM.FZ_Y1-4, D-300);
+  G.freezer.add(reg(fzLed, {name:'Freezer LED', pn:'EAV61873613', layer:'freezer', tag:'C'}));
+  const shroud = at(box(MM.FF_W-40, fzH-60, 30, liner), 0, MM.FZ_FLOOR+fzH/2, MM.FF_Z0+50);
+  G.freezer.add(reg(shroud, {name:'Freezer rear shroud / evaporator grille', pn:'MHN62442001', layer:'freezer', tag:'C'}));
 
-  // Freezer drawer "SmartPull" bar handle, horizontal, ~60% of width
-  const fzHandle = barHandle(MM.EXT_W*0.6, false);
-  fzHandle.position.set(0, fzHandleY, doorFaceZ);
-  fridge.add(fzHandle);
-
-  // Door-in-Door outline on the right door: a faint seam where the Home Bar panel meets the outer door
-  const didW = MM.RIGHT_W - 2*40, didH = MM.DOOR_H*0.62;
-  const didSeam = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.PlaneGeometry(didW, didH)),
-    new THREE.LineBasicMaterial({color:0x2a2e30, transparent:true, opacity:0.55})
-  );
-  didSeam.position.set((rightX0+rightX1)/2, doorCenterY + 40, doorFaceZ + 0.6);
-  fridge.add(didSeam);
-
-  // Hidden top hinges: hinge covers (ACQ86274031 / ACQ86664715) sit on the cabinet top at each outer corner
-  [leftX0 + 60, rightX1 - 60].forEach(x=>{
-    const cover = box(110, 22, 120, darkTrimMat);
-    cover.position.set(x, MM.EXT_H + 11, MM.CABINET_D - 40);
-    fridge.add(cover);
+  // =================================================================
+  // FRESH-FOOD INTERIOR
+  // =================================================================
+  const z0 = MM.FF_Z0, zc = z0 + MM.FF_D/2;
+  // cantilever ladder rails on the back wall
+  [-380, 0, 380].forEach((x,i)=>{ const rail = at(box(22, 800, 12, greyPlastic), x, MM.FF_Y0+500, z0+8);
+    G.fresh.add(reg(rail, {name:`Shelf rail ${i+1} (cantilever ladder)`, pn:'MEG63342502', layer:'fresh', tag:'C'})); });
+  // 4 split shelves = 2 rows × 2 halves (3 fixed + 1 folding); 31 × 16 in full shelf
+  const shW = 787/2, shD = 406;
+  [[MM.FF_Y0+590, 'B'], [MM.FF_Y0+840, 'A']].forEach(([y,row])=>{
+    [-1,1].forEach(s=>{
+      const sg = new THREE.Group();
+      const folding = (row==='A' && s===1);
+      sg.add(at(box(shW-8, 5, folding? shD*0.55 : shD, glass), s*(shW/2+6), y+8, z0+30+(folding?shD*0.55:shD)/2));
+      sg.add(at(box(shW-4, 14, 20, greyPlastic), s*(shW/2+6), y+7, z0+30+10));
+      sg.add(at(box(shW-4, 6, shD, greyPlastic), s*(shW/2+6), y+3, z0+30+shD/2));
+      G.fresh.add(reg(sg, {name:`${folding?'Folding':'Fixed'} split cantilever glass shelf, row ${row} ${s<0?'L':'R'}`, pn: folding?'AHT73454104':'AHT73554101', layer:'fresh', tag:'C', dims:fmt(shW,20,shD), note:'31 × 16 in full-shelf size from a retailer listing — approximate. Row heights are placeholders.'}));
+    });
   });
-
-  // ice/water dispenser recess on left door
-  const dispW = 241, dispH = 356;
-  const dispCenterY = MM.DOOR_Y0 + MM.DOOR_H*0.55;
-  const dispenser = box(dispW, dispH, 14, dispenserPanelMat);
-  dispenser.position.set(leftX0 + MM.LEFT_W*0.42, dispCenterY, doorZ + MM.DOOR_THICK/2 - 6);
-  fridge.add(dispenser);
-  const paddle = box(dispW*0.55, 14, 10, darkTrimMat);
-  paddle.position.set(dispenser.position.x, dispCenterY - dispH*0.28, doorZ + MM.DOOR_THICK/2);
-  fridge.add(paddle);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(dispW*0.5, 20), dispenserGlowMat);
-  glow.position.set(dispenser.position.x, dispCenterY + dispH*0.3, doorZ + MM.DOOR_THICK/2 + 0.5);
-  fridge.add(glow);
-  const glowLight = new THREE.PointLight(0x35c2c8, 0.4, 220);
-  glowLight.position.copy(glow.position);
-  fridge.add(glowLight);
-
-  // subtle LG wordmark, lower right door
-  const logo = new THREE.Mesh(new THREE.PlaneGeometry(120,30), logoMat);
-  logo.position.set((rightX0+rightX1)/2, MM.DOOR_Y0 + 70, doorZ + MM.DOOR_THICK/2 + 0.5);
-  fridge.add(logo);
-
-  // Center the whole fridge in X for a balanced orbit target
-  fridge.position.x = 0;
-
-  // ---------------------------------------------------------------
-  // Resize
-  // ---------------------------------------------------------------
-  function resize(){
-    const w = innerWidth, h = innerHeight;
-    camera.aspect = w/h; camera.updateProjectionMatrix();
-    renderer.setSize(w,h);
+  // Glide N' Serve full-width drawer
+  { const gw=MM.FF_W-60, gh=120, gd=470, gy=MM.FF_Y0+272, gz=zc+40;
+    const gs = new THREE.Group();
+    gs.add(at(box(gw, 4, gd, clearPlastic), 0, gy+2, gz)); gs.add(at(box(gw, gh, 12, clearPlastic), 0, gy+gh/2, gz+gd/2-6));
+    gs.add(at(box(gw, gh, 4, clearPlastic), 0, gy+gh/2, gz-gd/2+2)); gs.add(at(box(4, gh, gd, clearPlastic), -gw/2+2, gy+gh/2, gz)); gs.add(at(box(4, gh, gd, clearPlastic), gw/2-2, gy+gh/2, gz));
+    gs.add(at(box(gw, 6, gd, glass), 0, gy+gh+30, gz));
+    G.fresh.add(reg(gs, {name:'Glide N\' Serve temperature-controlled drawer + glass cover', pn:'AJP73574805 / ACQ85891502', layer:'fresh', tag:'C', dims:fmt(gw,gh,gd), note:'Full width (spec sheet). Size placeholder.'}));
+    [-1,1].forEach(s=>{ const r = at(box(10, 20, gd, alu), s*(gw/2+8), gy+10, gz); G.fresh.add(reg(r, {name:`Glide N' Serve slide rail ${s<0?'L':'R'}`, pn:'AEC73597502', layer:'fresh', tag:'C'})); });
   }
-  window.addEventListener('resize', resize);
-  resize();
+  // two humidity crispers + cover frame with glass
+  { const cw=(MM.FF_W-60)/2-10, ch=240, cd=500, cy=MM.FF_Y0+10, cz=zc+30;
+    [-1,1].forEach(s=>{ const cg = new THREE.Group(); const x=s*(cw/2+10);
+      cg.add(at(box(cw, 4, cd, clearPlastic), x, cy+2, cz)); cg.add(at(box(cw, ch, 12, clearPlastic), x, cy+ch/2, cz+cd/2-6));
+      cg.add(at(box(cw, ch, 4, clearPlastic), x, cy+ch/2, cz-cd/2+2)); cg.add(at(box(4, ch, cd, clearPlastic), x-cw/2+2, cy+ch/2, cz)); cg.add(at(box(4, ch, cd, clearPlastic), x+cw/2-2, cy+ch/2, cz));
+      cg.add(at(box(60, 8, 4, darkTrim), x+cw/2-60, cy+ch-10, cz+cd/2-2));
+      G.fresh.add(reg(cg, {name:`Humidity crisper drawer ${s<0?'L':'R'} (Vegetables / Fruit slider)`, pn: s<0?'AJP73694502':'AJP73694501', layer:'fresh', tag:'C', dims:fmt(cw,ch,cd), note:'Drawer size placeholder.'})); });
+    const frame = new THREE.Group();
+    frame.add(at(box(MM.FF_W-40, 10, cd+20, greyPlastic), 0, cy+ch+8, cz)); frame.add(at(box(MM.FF_W-60, 5, cd, glass), 0, cy+ch+14, cz));
+    G.fresh.add(reg(frame, {name:'Crisper cover frame + glass', pn:'ACQ85891603', layer:'fresh', tag:'C'}));
+  }
+  // water filter housing (upper-left), air filter, LED, multi-duct
+  const filt = cyl(38, 150, liner); filt.rotation.x=Math.PI/2; at(filt, -MM.FF_W/2+90, MM.FF_Y1-70, z0+MM.FF_D-160);
+  G.fresh.add(reg(filt, {name:'Water filter LT700P in filter head (upper-left, ceiling)', pn:'AGF80300702 / ADQ36011715', layer:'fresh', tag:'C'}));
+  const duct = at(box(220, 720, 34, liner), 0, MM.FF_Y0+640, z0+20);
+  G.fresh.add(reg(duct, {name:'Multi-Air Flow duct (rear wall) w/ damper', pn:'ADJ74132109', layer:'fresh', tag:'C', note:'Damper stepper 373–456 Ω per coil (SM).'}));
+  const airf = at(box(90, 90, 20, greyPlastic), 0, MM.FF_Y0+930, z0+40);
+  G.fresh.add(reg(airf, {name:'Fresh air filter LT120F', pn:'ADQ73214408', layer:'fresh', tag:'C'}));
+  [[-MM.FF_W/2+6, 'L'],[MM.FF_W/2-6, 'R']].forEach(([x,side])=>{ const l = new THREE.Mesh(new THREE.PlaneGeometry(14, 560), ledMat); l.rotation.y=(side==='L'?1:-1)*Math.PI/2; at(l, x, MM.FF_Y0+640, z0+MM.FF_D-120);
+    G.fresh.add(reg(l, {name:`LED light strip ${side}`, pn:'EAV61873612', layer:'fresh', tag:'C'})); });
+  const ledTop = new THREE.Mesh(new THREE.PlaneGeometry(300, 20), ledMat); ledTop.rotation.x=Math.PI/2; at(ledTop, 60, MM.FF_Y1-4, z0+MM.FF_D-150);
+  G.fresh.add(reg(ledTop, {name:'Ceiling LED module', pn:'EAV61873612', layer:'fresh', tag:'C'}));
+  const wtank = new THREE.Group(); for(let i=0;i<6;i++){ const t=cyl(7, 360, clearPlastic, 10); t.rotation.z=Math.PI/2; at(t, 0, MM.FF_Y0+18+i*16, z0+80+i*18); wtank.add(t); }
+  G.fresh.add(reg(wtank, {name:'Water tank (coiled reservoir) under crisper floor', pn:'AJL72911502', layer:'fresh', tag:'C'}));
 
-  // ---------------------------------------------------------------
+  // =================================================================
+  // REFRIGERATION & CONTROLS (machine room at back-bottom, evaporator
+  // behind freezer shroud, PCB on the cabinet back)
+  // =================================================================
+  const comp = new THREE.Group();
+  { const c = cyl(90, 300, blackMetal, 32); c.rotation.z=Math.PI/2; at(c, 150, MM.KICK_H+110, 140); comp.add(c);
+    comp.add(at(box(340, 12, 220, blackMetal), 150, MM.KICK_H+10, 140));
+    [-1,1].forEach(k=>{ const p=cyl(6, 120, copper, 10); at(p, 150+k*120, MM.KICK_H+250, 140); comp.add(p); }); }
+  G.mech.add(reg(comp, {name:'Linear inverter compressor + base + PTC / overload', pn:'TCA38151706 / AAN74109205 / EBG61486614', layer:'mech', tag:'C', note:'FLA075 family, R-134a 140 g, ISO10 oil 280 ml (SM). Requires firmware update on install. Position in machine room is a placeholder.'}));
+  const cond = new THREE.Group();
+  { const p = at(box(420, 200, 18, blackMetal), -180, MM.KICK_H+130, 40); cond.add(p);
+    for(let i=0;i<9;i++){ const w=cyl(2.5, 200, blackMetal, 6); at(w, -180-160+i*40, MM.KICK_H+130, 52); cond.add(w);} }
+  G.mech.add(reg(cond, {name:'Wire condenser', pn:'ACG73749402', layer:'mech', tag:'C'}));
+  const cfan = new THREE.Group(); { const f=cyl(62, 30, greyPlastic, 24); f.rotation.x=Math.PI/2; at(f, -180, MM.KICK_H+130, 150); cfan.add(f); const m=cyl(28,40,blackMetal,16); m.rotation.x=Math.PI/2; at(m,-180,MM.KICK_H+130,185); cfan.add(m); }
+  G.mech.add(reg(cfan, {name:'Condenser fan motor (BLDC)', pn:'4681JB1029D', layer:'mech', tag:'C'}));
+  const drier = cyl(12, 90, copper, 10); at(drier, -20, MM.KICK_H+200, 60);
+  G.mech.add(reg(drier, {name:'Drier / filter + capillary', pn:'ADH73150210', layer:'mech', tag:'C'}));
+  const evap = new THREE.Group();
+  { const e = at(box(560, 260, 40, alu), 0, MM.FZ_FLOOR+330, MM.FF_Z0+22); evap.add(e);
+    for(let i=0;i<7;i++){ const t=cyl(4, 540, copper, 8); t.rotation.z=Math.PI/2; at(t, 0, MM.FZ_FLOOR+220+i*36, MM.FF_Z0+22); evap.add(t);}
+    const h = at(box(560, 8, 8, blackMetal), 0, MM.FZ_FLOOR+190, MM.FF_Z0+22); evap.add(h); }
+  G.mech.add(reg(evap, {name:'Fin-tube evaporator (single, behind freezer shroud) + sheath defrost heater', pn:'ADL73762004 / 5300JK1005Z', layer:'mech', tag:'C', note:'Heater 34–42 Ω ≈ 350 W; defrost sensor cuts at 46 °F (SM).'}));
+  const efan = new THREE.Group(); { const f=cyl(60, 26, greyPlastic, 24); f.rotation.x=Math.PI/2; at(f, 0, MM.FZ_Y1-60, MM.FF_Z0+30); efan.add(f); }
+  G.mech.add(reg(efan, {name:'Evaporator / freezer fan motor (BLDC)', pn:'EAU63103208', layer:'mech', tag:'C'}));
+  const drip = at(box(520, 20, 200, greyPlastic), 0, MM.FZ_FLOOR+150, MM.FF_Z0+70);
+  G.mech.add(reg(drip, {name:'Drip tray + drain tube to machine room', pn:'AJP73914401 / AJR74125001', layer:'mech', tag:'C'}));
+  const mainPcb = new THREE.Group(); mainPcb.add(at(box(250, 180, 6, pcb), 180, MM.CASE_H-260, 4)); mainPcb.add(at(box(270, 200, 22, darkTrim), 180, MM.CASE_H-260, -10));
+  G.mech.add(reg(mainPcb, {name:'Main PCB in case (cabinet back, upper)', pn:'EBR74796443 / MBN62987901', layer:'mech', tag:'C', note:'Position placeholder.'}));
+  const valve = new THREE.Group(); valve.add(at(box(70, 60, 60, blackMetal), -300, MM.KICK_H+70, 30)); valve.add(at(box(40,40,40,blackMetal), -240, MM.KICK_H+70, 30));
+  G.mech.add(reg(valve, {name:'Water inlet valve + secondary valve', pn:'AJU72992601 / 5221JB2010G', layer:'mech', tag:'C', note:'360–420 Ω coils (SM).'}));
+  const cord = cyl(5, 400, blackMetal, 8); cord.rotation.z=Math.PI/2; at(cord, -200, MM.KICK_H+40, 8);
+  G.mech.add(reg(cord, {name:'Power cord, 115 V 60 Hz 15 A', pn:'EAD62108309', layer:'mech', tag:'C'}));
+  const sensors = new THREE.Group();
+  [[0, MM.FF_Y0+880, z0+40, 'refrigerator'], [0, MM.FZ_FLOOR+400, MM.FF_Z0+60, 'freezer'], [0, MM.FZ_FLOOR+330, MM.FF_Z0+48, 'defrost'], [-MM.FF_W/2+40, MM.FF_Y1-120, z0+MM.FF_D-100, 'humidity'], [W/2-40, MM.CASE_H-80, D-60, 'ambient'], [-W/2+300, MM.DOOR_Y0+MM.DOOR_H-320, D+40, 'icing']].forEach(([x,y,z,n])=>{
+    sensors.add(at(box(14,14,8,darkTrim), x,y,z)); });
+  G.mech.add(reg(sensors, {name:'Temperature sensors ×6 (refrigerator, freezer, defrost, humidity, ambient, ice maker)', pn:'6500JB2002X', layer:'mech', tag:'C', note:'30 kΩ @ 0 °C fridge/defrost; 30 kΩ @ −25 °C freezer (SM). Positions are placeholders.'}));
+  [[-W/2+MM.WALL_SIDE+20,'L'],[W/2-MM.WALL_SIDE-20,'R']].forEach(([x,s])=>{ const sw=at(box(18,26,12,darkTrim), x, MM.FF_Y1-30, D-20);
+    G.mech.add(reg(sw, {name:`Door switch ${s} (plunger)`, pn:'EBF62234504', layer:'mech', tag:'C'})); });
+
+  // =================================================================
+  // View state + door animation
+  // =================================================================
+  let doorAngle = 0, targetDoorAngle = 0, drawerOut = 0, targetDrawer = 0, ghost = false;
+  const angleInput = document.getElementById('doorAngle'), angleV = document.getElementById('doorAngleV');
+  function setView(which){
+    ['closed','open','ghost'].forEach(k=>document.getElementById('v-'+k).setAttribute('aria-pressed', String(k===which)));
+    if(which==='closed'){ targetDoorAngle=0; targetDrawer=0; ghost=false; }
+    if(which==='open'){ targetDoorAngle=105; targetDrawer=430; ghost=false; }
+    if(which==='ghost'){ targetDoorAngle=105; targetDrawer=430; ghost=true; }
+    angleInput.value = targetDoorAngle; angleV.textContent = targetDoorAngle+'°';
+    ghostable.forEach(m=>{ m.transparent = ghost; m.opacity = ghost?0.16:1; m.depthWrite = !ghost; m.needsUpdate=true; });
+    cavityLight.intensity = (targetDoorAngle>0)?0.6:0;
+  }
+  ['closed','open','ghost'].forEach(k=>document.getElementById('v-'+k).addEventListener('click', ()=>setView(k)));
+  angleInput.addEventListener('input', ()=>{ targetDoorAngle = +angleInput.value; angleV.textContent = targetDoorAngle+'°'; cavityLight.intensity = targetDoorAngle>0?0.6:0; });
+  document.getElementById('resetView').addEventListener('click', ()=>{ orbit.tR=HOME.radius; orbit.tT=HOME.theta; orbit.tP=HOME.phi; });
+
+  // layers UI
+  const layersEl = document.getElementById('layers');
+  Object.entries(LAYERS).forEach(([k,v])=>{
+    const n = parts.filter(p=>p.layer===k).length;
+    const lab = document.createElement('label');
+    lab.innerHTML = `<input type="checkbox" id="layer-${k}" checked><span class="sw" style="background:${v.color}"></span>${v.name}<span class="n">${n}</span>`;
+    lab.querySelector('input').addEventListener('change', e=>{ G[k].visible = e.target.checked; });
+    layersEl.appendChild(lab);
+  });
+
+  // parts list UI
+  const plist = document.getElementById('plist'), filter = document.getElementById('filter');
+  document.getElementById('pcount').textContent = parts.length + ' parts';
+  let selected = null;
+  function renderList(){
+    const q = filter.value.trim().toLowerCase();
+    plist.innerHTML = '';
+    Object.entries(LAYERS).forEach(([k,v])=>{
+      const items = parts.filter(p=>p.layer===k && (!q || p.name.toLowerCase().includes(q) || p.pn.toLowerCase().includes(q)));
+      if(!items.length) return;
+      const h = document.createElement('h4'); h.innerHTML = `<span class="sw" style="background:${v.color}"></span>${v.name}`; plist.appendChild(h);
+      items.forEach(p=>{
+        const d = document.createElement('div'); d.className = 'pitem' + (p===selected?' sel':'');
+        d.innerHTML = `<span>${p.name}</span><span class="tag ${p.tag}">${p.tag}</span><span class="pn">${p.pn}</span>`;
+        d.addEventListener('click', ()=>select(p===selected?null:p));
+        plist.appendChild(d);
+      });
+    });
+  }
+  filter.addEventListener('input', renderList);
+  renderList();
+
+  // readout + highlight
+  const rName=document.getElementById('r-name'), rMeta=document.getElementById('r-meta'), rDims=document.getElementById('r-dims'), rNote=document.getElementById('r-note');
+  let hlMeshes = [];
+  function clearHL(){ hlMeshes.forEach(m=>{ m.material = m.userData.origMat; }); hlMeshes=[]; }
+  function showPart(p){
+    if(!p){ rName.textContent='Hover a part'; rMeta.textContent='Every mesh carries its LG part number and a confidence tag — C confirmed in an LG document, P placeholder geometry.'; rDims.textContent=''; rNote.textContent=''; return; }
+    rName.textContent = p.name;
+    rMeta.textContent = `${p.pn}  ·  ${LAYERS[p.layer].name}  ·  ${p.tag==='C'?'confirmed in LG document':'placeholder geometry'}`;
+    rDims.textContent = p.dims || '';
+    rNote.textContent = p.note || '';
+  }
+  function select(p){
+    selected = p; clearHL();
+    if(p){ p.objs.forEach(m=>{ m.userData.origMat = m.material; m.material = highlight; hlMeshes.push(m); }); }
+    showPart(p); renderList();
+  }
+
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  let hovered = null;
+  function pick(e){
+    const r = canvas.getBoundingClientRect();
+    ptr.x = ((e.clientX-r.left)/r.width)*2-1; ptr.y = -((e.clientY-r.top)/r.height)*2+1;
+    ray.setFromCamera(ptr, camera);
+    const hits = ray.intersectObjects(scene.children, true).filter(h=>h.object.userData.part && h.object.visible && isVisible(h.object));
+    return hits.length ? hits[0].object.userData.part : null;
+  }
+  function isVisible(o){ while(o){ if(!o.visible) return false; o=o.parent; } return true; }
+
+  // =================================================================
   // Pointer controls
-  // ---------------------------------------------------------------
-  let dragging=false, lastX=0, lastY=0;
-  canvas.addEventListener('pointerdown', e=>{
-    dragging=true; lastX=e.clientX; lastY=e.clientY; orbit.autoRotate=false;
-    canvas.setPointerCapture(e.pointerId);
-  });
+  // =================================================================
+  let dragging=false, moved=false, lastX=0, lastY=0;
+  canvas.addEventListener('pointerdown', e=>{ dragging=true; moved=false; lastX=e.clientX; lastY=e.clientY; orbit.autoRotate=false; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', e=>{
-    if(!dragging) return;
-    const dx = e.clientX-lastX, dy = e.clientY-lastY;
-    lastX=e.clientX; lastY=e.clientY;
-    orbit.targetTheta -= dx*0.0045;
-    orbit.targetPhi = Math.min(Math.max(orbit.targetPhi - dy*0.0045, 0.35), Math.PI-0.35);
+    if(dragging){ const dx=e.clientX-lastX, dy=e.clientY-lastY; if(Math.abs(dx)+Math.abs(dy)>2) moved=true; lastX=e.clientX; lastY=e.clientY;
+      orbit.tT -= dx*0.0045; orbit.tP = Math.min(Math.max(orbit.tP - dy*0.0045, 0.3), Math.PI-0.3); return; }
+    const p = pick(e); if(p!==hovered){ hovered=p; canvas.style.cursor = p?'pointer':'grab'; if(!selected) showPart(p); }
   });
-  window.addEventListener('pointerup', ()=>dragging=false);
-  canvas.addEventListener('wheel', e=>{
-    e.preventDefault();
-    orbit.targetRadius = Math.min(Math.max(orbit.targetRadius + e.deltaY*0.9, orbit.minR), orbit.maxR);
-  }, {passive:false});
+  window.addEventListener('pointerup', e=>{ if(dragging && !moved){ const p = pick(e); select(p===selected?null:p); } dragging=false; });
+  canvas.addEventListener('wheel', e=>{ e.preventDefault(); orbit.tR = Math.min(Math.max(orbit.tR + e.deltaY*1.1, orbit.minR), orbit.maxR); }, {passive:false});
+  let pinch=null;
+  canvas.addEventListener('touchmove', e=>{ if(e.touches.length===2){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); if(pinch!=null) orbit.tR=Math.min(Math.max(orbit.tR-(d-pinch)*4, orbit.minR), orbit.maxR); pinch=d; } }, {passive:true});
+  canvas.addEventListener('touchend', ()=>pinch=null);
 
-  // touch pinch-to-zoom
-  let pinchDist=null;
-  canvas.addEventListener('touchmove', e=>{
-    if(e.touches.length===2){
-      const dx=e.touches[0].clientX-e.touches[1].clientX;
-      const dy=e.touches[0].clientY-e.touches[1].clientY;
-      const d = Math.hypot(dx,dy);
-      if(pinchDist!=null){
-        orbit.targetRadius = Math.min(Math.max(orbit.targetRadius - (d-pinchDist)*4, orbit.minR), orbit.maxR);
-      }
-      pinchDist = d;
-    }
-  }, {passive:true});
-  canvas.addEventListener('touchend', ()=>pinchDist=null);
+  function resize(){ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); }
+  addEventListener('resize', resize); resize();
 
-  // ---------------------------------------------------------------
-  // Theme change watcher
-  // ---------------------------------------------------------------
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshTheme);
   new MutationObserver(refreshTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
-  function refreshTheme(){
-    const d = isDark();
-    envTex = equirectEnvTexture(d);
-    scene.background = envTex; scene.environment = envTex;
-    groundMat.opacity = d ? 0.45 : 0.28;
-  }
+  function refreshTheme(){ const d=isDark(); env=envTex(d); scene.background=env; scene.environment=env; groundMat.opacity=d?0.45:0.28; }
 
-  // ---------------------------------------------------------------
-  // Render loop
-  // ---------------------------------------------------------------
-  let firstFrame = true;
+  // =================================================================
+  // Loop
+  // =================================================================
+  let first=true;
   function animate(){
     requestAnimationFrame(animate);
-    if(orbit.autoRotate) orbit.targetTheta += 0.0016;
-    orbit.theta += (orbit.targetTheta-orbit.theta)*0.08;
-    orbit.phi += (orbit.targetPhi-orbit.phi)*0.08;
-    orbit.radius += (orbit.targetRadius-orbit.radius)*0.08;
-    sphericalToCamera();
+    if(orbit.autoRotate) orbit.tT += 0.0014;
+    orbit.theta += (orbit.tT-orbit.theta)*0.08; orbit.phi += (orbit.tP-orbit.phi)*0.08; orbit.radius += (orbit.tR-orbit.radius)*0.08;
+    doorAngle += (targetDoorAngle-doorAngle)*0.07; drawerOut += (targetDrawer-drawerOut)*0.07;
+    const a = THREE.MathUtils.degToRad(doorAngle);
+    leftDoor.rotation.y = -a; rightDoor.rotation.y = a;
+    fz.position.z = drawerOut; tray.position.z = drawerOut*0.55;
+    placeCamera();
     renderer.render(scene, camera);
-    if(firstFrame){
-      firstFrame=false;
-      const l = document.getElementById('loading');
-      l.style.opacity='0';
-      setTimeout(()=>l.remove(), 500);
-    }
+    if(first){ first=false; const l=document.getElementById('loading'); l.style.opacity='0'; setTimeout(()=>l.remove(),500); }
   }
   animate();
 })();
