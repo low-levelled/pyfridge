@@ -135,10 +135,10 @@
     <div id="title">pyfridge<small>Reference unit — exterior</small></div>
     <div class="divider"></div>
     <div class="chips">
-      <span class="chip"><b>Closest match</b>LG LFXS27566S, 27 cu ft</span>
-      <span class="chip"><b>Exterior W×H×D</b>35.75 × 69.75 × 32.875 in</span>
-      <span class="chip"><b>Fridge opening</b>34 × 42 in</span>
-      <span class="chip"><b>Dispenser</b>left door, confirmed</span>
+      <span class="chip"><b>Model</b>LG LFXS27566S, 26.6 cu ft</span>
+      <span class="chip"><b>W×H×D</b>35¾ × 69¾ × 32⅞ in (35⅜ w/ handles)</span>
+      <span class="chip"><b>Handles</b>bar, 2½ in protrusion</span>
+      <span class="chip"><b>Dispenser</b>left · <b>Door-in-Door</b>right</span>
     </div>
   </div>
 </div>
@@ -146,7 +146,7 @@
 <div class="hud" id="caption">
   <div class="panel">
     <div class="label">Confidence: mixed</div>
-    <p><strong>Exterior envelope, cabinet-only and without-handles depth, and dispenser side (left)</strong> are confirmed against LG's own spec sheet for the LFXS27566S, the closest published match to our class. <strong>Door-width split, exact dispenser size/position, and the freezer-drawer height ratio</strong> have no public LG diagram to check against — still placeholder. Not modeled yet: LFXS27566S's Door-in-Door panel and second internal freezer drawer — pending a scope call.</p>
+    <p><strong>Envelope, depths (w/o door 29 in · w/o handles 32⅞ · w/ handles 35⅜), bar handles, hidden top hinges, dispenser on the left door, Door-in-Door on the right</strong> are confirmed from LG's spec sheet, service manual (MFL62188073) and owner's manual. Door widths are derived from LG's door-open figures (≈17.6 in each, 50/50). <strong>Dispenser recess size, freezer-drawer front height, bar diameter, kick grille</strong> are not in any LG document — still placeholder. Interior (shelves, crispers, bins, ice maker, freezer drawers) is the next layer; see <code>cad/spec/</code> in the repo.</p>
   </div>
 </div>
 
@@ -173,7 +173,9 @@
     FZ_H: 530,        // freezer drawer front height — placeholder, no diagram found
     GAP_H: 10,        // reveal between freezer drawer and doors — placeholder
     CENTER_GAP: 6,     // vertical seam between the two doors — placeholder
-    LEFT_DOOR_FRAC: 0.52 // dispenser door takes the larger share — placeholder, no diagram found
+    LEFT_DOOR_FRAC: 0.5, // LG door-open figures (47⅝ − 29 = 18⅝ in incl. hinge offset; 1¾ in past each side at 90°) imply equal doors ≈17.6 in — inferred from spec sheet
+    HANDLE_PROTRUSION: 63.5, // 35.375in (w/ handles) − 32.875in (w/o) = 2.5in — LG service manual dim. A−B, confirmed
+    HANDLE_BAR_DIA: 28   // bar handle diameter — placeholder, not in any LG doc
   };
   MM.EXT_D = MM.CABINET_D + MM.DOOR_THICK;
   MM.DOOR_H = MM.EXT_H - 20 - MM.GAP_H - MM.FZ_H - MM.KICK_H; // 20mm top reveal
@@ -391,10 +393,8 @@
   freezer.position.set(0, MM.KICK_H + MM.FZ_H/2, MM.CABINET_D + MM.DOOR_THICK/2);
   fridge.add(freezer);
 
-  // freezer handle groove (horizontal, near top of drawer)
-  const fzHandle = box(MM.EXT_W-120, 16, 10, darkTrimMat);
-  fzHandle.position.set(0, MM.KICK_H + MM.FZ_H - 46, MM.EXT_D + 1);
-  fridge.add(fzHandle);
+  // freezer drawer bar handle (AED73593102), horizontal, near top of drawer front — added after barHandle() is defined below
+  const fzHandleY = MM.KICK_H + MM.FZ_H - 70;
 
   // reveal gasket line between freezer and doors
   const revealY = MM.KICK_H + MM.FZ_H + MM.GAP_H/2;
@@ -421,14 +421,64 @@
   seam.position.set((leftX1+rightX0)/2, doorCenterY, doorZ);
   fridge.add(seam);
 
-  // recessed pocket handles on each door's inner edge
-  const handleH = MM.DOOR_H*0.65, handleW = 26, handleInset = 8;
-  const leftHandle = box(handleW, handleH, handleInset, darkTrimMat);
-  leftHandle.position.set(leftX1 - handleW/2 - 4, doorCenterY, doorZ + MM.DOOR_THICK/2 - handleInset/2);
+  // Bolt-on bar handles (AED73593202 family) on each door's inner edge.
+  // Stainless bar on two standoff studs; total protrusion = MM.HANDLE_PROTRUSION.
+  const doorFaceZ = MM.CABINET_D + MM.DOOR_THICK;
+  const barMat = steelMat.clone(); barMat.roughness = 0.3; barMat.metalness = 0.85; barMat.bumpMap = null;
+  function barHandle(length, vertical){
+    const g = new THREE.Group();
+    const r = MM.HANDLE_BAR_DIA/2;
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(r, r, length, 24), barMat);
+    bar.castShadow = true;
+    if(!vertical) bar.rotation.z = Math.PI/2;
+    bar.position.z = MM.HANDLE_PROTRUSION - r;
+    g.add(bar);
+    const studLen = MM.HANDLE_PROTRUSION - r;
+    [-1,1].forEach(s=>{
+      const stud = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, studLen, 16), barMat);
+      stud.rotation.x = Math.PI/2;
+      stud.castShadow = true;
+      if(vertical) stud.position.set(0, s*(length/2 - 60), studLen/2);
+      else stud.position.set(s*(length/2 - 60), 0, studLen/2);
+      g.add(stud);
+    });
+    return g;
+  }
+  const fridgeHandleLen = MM.DOOR_H*0.78;
+  const handleInsetX = 58;
+  const leftHandle = barHandle(fridgeHandleLen, true);
+  leftHandle.position.set(leftX1 - handleInsetX, doorCenterY, doorFaceZ);
   fridge.add(leftHandle);
-  const rightHandle = box(handleW, handleH, handleInset, darkTrimMat);
-  rightHandle.position.set(rightX0 + handleW/2 + 4, doorCenterY, doorZ + MM.DOOR_THICK/2 - handleInset/2);
+  const rightHandle = barHandle(fridgeHandleLen, true);
+  rightHandle.position.set(rightX0 + handleInsetX, doorCenterY, doorFaceZ);
   fridge.add(rightHandle);
+
+  // Door-in-Door ("Home Bar") release button on the right handle — owner's manual item 5
+  const didButton = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 6, 20), darkTrimMat);
+  didButton.rotation.x = Math.PI/2;
+  didButton.position.set(rightX0 + handleInsetX, doorCenterY + fridgeHandleLen/2 - 120, doorFaceZ + MM.HANDLE_PROTRUSION - MM.HANDLE_BAR_DIA/2 + 12);
+  fridge.add(didButton);
+
+  // Freezer drawer "SmartPull" bar handle, horizontal, ~60% of width
+  const fzHandle = barHandle(MM.EXT_W*0.6, false);
+  fzHandle.position.set(0, fzHandleY, doorFaceZ);
+  fridge.add(fzHandle);
+
+  // Door-in-Door outline on the right door: a faint seam where the Home Bar panel meets the outer door
+  const didW = MM.RIGHT_W - 2*40, didH = MM.DOOR_H*0.62;
+  const didSeam = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.PlaneGeometry(didW, didH)),
+    new THREE.LineBasicMaterial({color:0x2a2e30, transparent:true, opacity:0.55})
+  );
+  didSeam.position.set((rightX0+rightX1)/2, doorCenterY + 40, doorFaceZ + 0.6);
+  fridge.add(didSeam);
+
+  // Hidden top hinges: hinge covers (ACQ86274031 / ACQ86664715) sit on the cabinet top at each outer corner
+  [leftX0 + 60, rightX1 - 60].forEach(x=>{
+    const cover = box(110, 22, 120, darkTrimMat);
+    cover.position.set(x, MM.EXT_H + 11, MM.CABINET_D - 40);
+    fridge.add(cover);
+  });
 
   // ice/water dispenser recess on left door
   const dispW = 241, dispH = 356;

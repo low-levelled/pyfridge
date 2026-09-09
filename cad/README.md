@@ -1,26 +1,53 @@
 # CAD / 3D Reference Models
 
-Working visualizations of the physical hardware, built before we lock in coordinate
-data in `sql/schema.sql` / `sql/seed.sql`. Each file is a self-contained Three.js
-scene — open it directly in a browser, no build step.
+The physical baseline for pyfridge: a part-by-part model of the reference refrigerator,
+built from LG's own documents before any coordinate data is locked into
+`sql/schema.sql` / `sql/seed.sql` and before the gantry frame is designed around it.
 
-## `reference_unit.html` — exterior shell (v1)
+Each `.html` is a self-contained Three.js scene — open it in a browser, no build step.
 
-A dimensioned model of the reference refrigerator: LG French-door class, ~28 cu ft,
-recessed pocket handles, matching the `34"W × 42"H` fridge-section interior opening
-already cited in the README and baked into `sql/schema.sql` (864mm × 1066mm).
+## Reference unit: LG LFXS27566S
 
-**What's verified against real spec sheets:**
-- Exterior envelope — 35.75"W × 70"H × 34.4"D
-- Fridge-section interior opening — 34"W × 42"H (matches existing schema coordinates)
-- Pocket-handle styling, PrintProof-stainless finish, no top branding strip
+27 cu ft-class (26.6 actual: 17.7 fridge / 8.9 freezer) French door, Door-in-Door,
+in-door ice maker, linear compressor. Chosen as the closest published match to the
+"LG French Door, 34"W × 42"H fridge opening" the README has always cited.
 
-**What's a placeholder, not yet confirmed against an LG diagram or photo:**
-- Door width split (52/48, dispenser side wider)
-- Dispenser size/position on the left door
-- Freezer-drawer-to-doors height ratio
+Sources (facts extracted; LG's PDFs are copyrighted and are **not** committed here):
+- LG spec sheet — https://www.lg.com/us/support/products/documents/LFXS27566S%20Spec%20Sheet.pdf
+- LG service manual MFL62188073 (LFXS27566*, 109 pp) — https://research.encompass.com/ZEN/sm/LFXS27566S.pdf
+- LG owner's manual MFL70761734 (LFXS28566* sibling, same chassis) — https://pdf.lowes.com/productdocuments/fb36fc23-32f5-4159-b543-7ecfc1f73c12/61288328.pdf
+- Exploded parts diagrams — https://www.appliancepartspros.com/parts-for-lg-lfxs27566s-00.html
 
-Next step before trusting this for hardware fit-checks: verify against an actual
-photo or spec sheet of our specific model, then move on to the interior — zones,
-shelf/drawer coordinates (this is what issue #12 is asking for), and the gantry
-frame described in the README's hardware integration section.
+## Files
+
+| File | What it is |
+|---|---|
+| `reference_unit.html` | Exterior shell, dimensioned. Bar handles, hidden top hinges, dispenser (left door), Door-in-Door seam (right door), freezer drawer, kick grille. |
+| `spec/dimensions.md` | Every dimension we have, each tagged **confirmed** (LG document) / **measured** (owner) / **placeholder** (no source yet). |
+| `spec/parts.md` | Full parts inventory with LG part numbers, grouped by assembly. |
+
+## Confidence, current state
+
+**Confirmed from LG documents:** exterior envelope 35¾ × 69¾ (hinge top) × 32⅞ in;
+depth without doors 29 in; with handles 35⅜ in; door-open depth 47⅝ in; width at 90°
+open 39¼ in (44¼ with handle); bar handles (2½ in protrusion); hidden top hinges with
+lever latch, door lifts off middle hinge pin; auto-closing hinge under 30°; dispenser
+on the left door; Door-in-Door ("Home Bar") on the right door, button release on the
+handle; foldable heated mullion on the left door; in-door Slim SpacePlus ice maker in
+the left door; 4 cantilever glass shelves (1 folding), 2 humidity crispers, full-width
+Glide N' Serve drawer, 9 door bins; freezer = one drawer front, Durabase basket with
+divider + upper pull-out tray.
+
+**Still placeholder (no LG document breaks it out):** per-door width split, dispenser
+recess size and position, freezer-drawer front height, handle bar diameter, kick-grille
+height and setback, wall/insulation thickness. The README's 34"W × 42"H fridge-section
+opening does not appear in any LG document — it must be measured on a unit.
+
+## Roadmap for this directory
+
+1. ~~Exterior shell~~ → verified against spec sheet + service manual
+2. Interior, doors open: shelves, crispers, Glide N' Serve, door bins, Door-in-Door
+   case, in-door ice bin, mullion, freezer basket + tray, hinges (in progress)
+3. Measure the real fridge-section opening; reconcile with `sql/schema.sql` X/Y/Z
+   limits (issue #12)
+4. Only then: the gantry frame from the README hardware section
