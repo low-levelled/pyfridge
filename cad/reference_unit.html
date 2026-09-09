@@ -1,0 +1,536 @@
+<title>pyfridge Reference Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg-top:#eef2f3; --bg-bottom:#d7dee0;
+    --surface:#ffffffcc; --surface-solid:#ffffff;
+    --ink:#16211f; --ink-muted:#55666a;
+    --line:#c3cdd0;
+    --accent:#ff6a1f; --accent-ink:#8a3512;
+    --accent-2:#1f8a90; --accent-2-ink:#0f5458;
+    --shadow: 0 8px 28px -8px rgba(20,30,32,0.25);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg-top:#10161a; --bg-bottom:#060a0c;
+      --surface:#141b1ecc; --surface-solid:#141b1e;
+      --ink:#e6eef0; --ink-muted:#8fa0a4;
+      --line:#263136;
+      --accent:#ff7d33; --accent-ink:#ffd8bd;
+      --accent-2:#35c2c8; --accent-2-ink:#bdf3f4;
+      --shadow: 0 8px 28px -8px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg-top:#10161a; --bg-bottom:#060a0c;
+    --surface:#141b1ecc; --surface-solid:#141b1e;
+    --ink:#e6eef0; --ink-muted:#8fa0a4;
+    --line:#263136;
+    --accent:#ff7d33; --accent-ink:#ffd8bd;
+    --accent-2:#35c2c8; --accent-2-ink:#bdf3f4;
+    --shadow: 0 8px 28px -8px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:var(--bg-bottom);
+    color:var(--ink);
+    font-family:"Public Sans", system-ui, -apple-system, sans-serif;
+    overflow:hidden;
+    height:100vh;
+  }
+  #stage{position:fixed; inset:0;}
+  canvas#gl{display:block; width:100%; height:100%; touch-action:none; cursor:grab;}
+  canvas#gl:active{cursor:grabbing;}
+
+  .hud{position:fixed; z-index:5; pointer-events:none;}
+  .panel{
+    pointer-events:auto;
+    background:var(--surface);
+    backdrop-filter: blur(10px);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow: var(--shadow);
+  }
+
+  #topbar{
+    top:16px; left:16px; right:16px;
+    display:flex; align-items:center; gap:12px;
+    flex-wrap:wrap;
+  }
+  #topbar .panel{
+    display:flex; align-items:center; gap:14px;
+    padding:10px 16px;
+    flex-wrap:wrap;
+  }
+  #title{
+    font-weight:700; font-size:15px; letter-spacing:0.01em;
+    white-space:nowrap;
+  }
+  #title small{
+    display:block; font-weight:500; font-size:11px; color:var(--ink-muted);
+    text-transform:uppercase; letter-spacing:0.08em; margin-top:2px;
+  }
+  .divider{width:1px; height:28px; background:var(--line); flex-shrink:0;}
+  .chips{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px; font-weight:500;
+    color:var(--ink); background:transparent;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:5px 9px;
+    white-space:nowrap;
+    line-height:1.2;
+  }
+  .chip b{font-weight:600; color:var(--ink-muted); font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; margin-right:6px;}
+
+  #caption{
+    left:16px; bottom:16px; max-width:min(420px, calc(100vw - 32px));
+  }
+  #caption .panel{padding:12px 14px;}
+  #caption .label{
+    font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent-2-ink); margin-bottom:5px; display:flex; align-items:center; gap:6px;
+  }
+  #caption .label::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--accent-2); display:inline-block;}
+  #caption p{margin:0; font-size:12px; line-height:1.5; color:var(--ink-muted);}
+  #caption p strong{color:var(--ink); font-weight:600;}
+
+  #hint{
+    right:16px; bottom:16px;
+  }
+  #hint .panel{
+    padding:8px 12px; font-family:"IBM Plex Mono", monospace;
+    font-size:11px; color:var(--ink-muted); display:flex; gap:10px; align-items:center;
+  }
+  #hint kbd{
+    font-family:inherit; background:var(--surface-solid); border:1px solid var(--line);
+    border-radius:4px; padding:1px 5px; color:var(--ink); font-size:10.5px;
+  }
+
+  #loading{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:var(--bg-bottom); z-index:10; transition:opacity .5s ease;
+    font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-muted);
+  }
+
+  @media (max-width:640px){
+    #topbar .panel{padding:10px 12px; gap:10px;}
+    #title{font-size:13px;}
+    .chip{font-size:10.5px; padding:4px 7px;}
+    #caption{right:16px;}
+    #hint{display:none;}
+  }
+</style>
+
+<div id="loading">Loading reference model…</div>
+<div id="stage"><canvas id="gl"></canvas></div>
+
+<div class="hud" id="topbar">
+  <div class="panel">
+    <div id="title">pyfridge<small>Reference unit — exterior</small></div>
+    <div class="divider"></div>
+    <div class="chips">
+      <span class="chip"><b>Class</b>LG French door, ~28 cu ft</span>
+      <span class="chip"><b>Exterior WHD</b>35.75 × 70 × 34.4 in</span>
+      <span class="chip"><b>Fridge opening</b>34 × 42 in</span>
+    </div>
+  </div>
+</div>
+
+<div class="hud" id="caption">
+  <div class="panel">
+    <div class="label">Confidence: mixed</div>
+    <p><strong>Cabinet envelope, door-opening size, and pocket-handle styling</strong> are drawn from published LG French-door spec sheets. <strong>Dispenser size/position, freezer-drawer height split, and door-width ratio</strong> are typical values for this appliance class, not confirmed against an LG diagram — treat as placeholder until we check a real spec sheet or photo for our exact model.</p>
+  </div>
+</div>
+
+<div class="hud" id="hint">
+  <div class="panel"><kbd>drag</kbd> orbit <kbd>scroll</kbd> zoom</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------------------------------------------------------------
+  // Reference dimensions (mm). Source: LG French-door class spec
+  // sheets + industry-standard proportions — see on-page caption
+  // for which figures are verified vs. representative.
+  // ---------------------------------------------------------------
+  const MM = {
+    EXT_W: 908,      // 35.75in exterior width
+    EXT_H: 1778,      // 70in exterior height
+    DOOR_THICK: 48,   // French door panel thickness
+    CABINET_D: 826,   // body depth behind the doors
+    KICK_H: 80,       // recessed base grille height
+    FZ_H: 530,        // freezer drawer front height
+    GAP_H: 10,        // reveal between freezer drawer and doors
+    CENTER_GAP: 6,     // vertical seam between the two doors
+    LEFT_DOOR_FRAC: 0.52 // dispenser door takes the larger share
+  };
+  MM.EXT_D = MM.CABINET_D + MM.DOOR_THICK;
+  MM.DOOR_H = MM.EXT_H - 20 - MM.GAP_H - MM.FZ_H - MM.KICK_H; // 20mm top reveal
+  MM.DOOR_Y0 = MM.KICK_H + MM.FZ_H + MM.GAP_H;
+  MM.DOOR_Y1 = MM.DOOR_Y0 + MM.DOOR_H;
+  const doorSpan = MM.EXT_W - MM.CENTER_GAP;
+  MM.LEFT_W = doorSpan * MM.LEFT_DOOR_FRAC;
+  MM.RIGHT_W = doorSpan * (1 - MM.LEFT_DOOR_FRAC);
+
+  // ---------------------------------------------------------------
+  // Theme
+  // ---------------------------------------------------------------
+  function isDark(){
+    const t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------------------------------------------------------------
+  // Renderer / scene / camera
+  // ---------------------------------------------------------------
+  const canvas = document.getElementById('gl');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(32, innerWidth/innerHeight, 10, 20000);
+  const target = new THREE.Vector3(0, MM.EXT_H*0.46, MM.EXT_D*0.45);
+
+  // Manual orbit controls (spherical, damped) — no OrbitControls module needed.
+  const orbit = {
+    radius: 2600, minR: 1400, maxR: 5200,
+    theta: 0.62,        // azimuth
+    phi: 1.28,          // polar (from +Y)
+    targetTheta: 0.62, targetPhi: 1.28, targetRadius: 2600,
+    autoRotate: !reducedMotion,
+  };
+  function sphericalToCamera(){
+    const sp = Math.sin(orbit.phi), cp = Math.cos(orbit.phi);
+    camera.position.set(
+      target.x + orbit.radius * sp * Math.sin(orbit.theta),
+      target.y + orbit.radius * cp,
+      target.z + orbit.radius * sp * Math.cos(orbit.theta)
+    );
+    camera.lookAt(target);
+  }
+  sphericalToCamera();
+
+  // ---------------------------------------------------------------
+  // Procedural textures
+  // ---------------------------------------------------------------
+  function brushedMetalTexture(dark){
+    const w=512,h=512, c=document.createElement('canvas'); c.width=w;c.height=h;
+    const ctx=c.getContext('2d');
+    const base = dark ? '#9aa3a6' : '#c7cdd0';
+    ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
+    for(let i=0;i<9000;i++){
+      const x = Math.random()*w;
+      const len = 40+Math.random()*160;
+      const y0 = Math.random()*h;
+      const shade = Math.random()*20-10;
+      ctx.strokeStyle = `rgba(${shade>0?255:0},${shade>0?255:0},${shade>0?255:0},${Math.abs(shade)/140})`;
+      ctx.lineWidth = 0.6;
+      ctx.beginPath(); ctx.moveTo(x,y0); ctx.lineTo(x, y0+len); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = 4;
+    return tex;
+  }
+  function grilleTexture(){
+    const w=256,h=64,c=document.createElement('canvas');c.width=w;c.height=h;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#1a1c1d'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=2;
+    for(let y=6;y<h;y+=8){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    return new THREE.CanvasTexture(c);
+  }
+  function equirectEnvTexture(dark){
+    const w=512,h=256, c=document.createElement('canvas'); c.width=w;c.height=h;
+    const ctx=c.getContext('2d');
+    const g = ctx.createLinearGradient(0,0,0,h);
+    if(dark){
+      g.addColorStop(0,'#2a3438'); g.addColorStop(0.35,'#151b1e'); g.addColorStop(1,'#050708');
+    } else {
+      g.addColorStop(0,'#ffffff'); g.addColorStop(0.35,'#dfe6e8'); g.addColorStop(1,'#aab4b7');
+    }
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    // soft horizon band for a studio-floor feel
+    ctx.fillStyle = dark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.5)';
+    ctx.fillRect(0, h*0.62, w, h*0.06);
+    const tex = new THREE.CanvasTexture(c);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+  function textPlaneTexture(text, opts){
+    opts = opts || {};
+    const w = opts.w||256, h = opts.h||64;
+    const c = document.createElement('canvas'); c.width=w;c.height=h;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = opts.color || 'rgba(80,90,92,0.8)';
+    ctx.font = (opts.weight||600)+' '+(opts.size||34)+'px "Public Sans", sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.letterSpacing = (opts.spacing||'2px');
+    ctx.fillText(text, w/2, h/2);
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  // ---------------------------------------------------------------
+  // Environment / background
+  // ---------------------------------------------------------------
+  let envTex = equirectEnvTexture(isDark());
+  scene.background = envTex;
+  scene.environment = envTex;
+
+  // ---------------------------------------------------------------
+  // Lighting
+  // ---------------------------------------------------------------
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x30363a, 0.55);
+  scene.add(hemi);
+
+  const key = new THREE.DirectionalLight(0xfff4e8, 1.35);
+  key.position.set(1400, 2200, 1600);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048,2048);
+  key.shadow.camera.near = 100; key.shadow.camera.far = 6000;
+  key.shadow.camera.left=-1400; key.shadow.camera.right=1400;
+  key.shadow.camera.top=1400; key.shadow.camera.bottom=-1400;
+  key.shadow.bias=-0.0008;
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0xdce8f5, 0.55);
+  fill.position.set(-1800, 900, 900);
+  scene.add(fill);
+
+  const rim = new THREE.DirectionalLight(0xbfe9ff, 0.6);
+  rim.position.set(-400, 1600, -2000);
+  scene.add(rim);
+
+  // soft "softbox" glow plane above/front, purely emissive, no cast
+  const softbox = new THREE.Mesh(
+    new THREE.PlaneGeometry(1600,900),
+    new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.05, side:THREE.DoubleSide})
+  );
+  softbox.position.set(0, 1700, 2400);
+  softbox.lookAt(0, MM.EXT_H*0.5, 0);
+  scene.add(softbox);
+
+  // ---------------------------------------------------------------
+  // Ground (studio floor, soft shadow catcher)
+  // ---------------------------------------------------------------
+  const groundMat = new THREE.ShadowMaterial({opacity: isDark() ? 0.45 : 0.28});
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000,9000), groundMat);
+  ground.rotation.x = -Math.PI/2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // ---------------------------------------------------------------
+  // Fridge group
+  // ---------------------------------------------------------------
+  const fridge = new THREE.Group();
+  scene.add(fridge);
+
+  const dark = isDark();
+  const steelTex = brushedMetalTexture(dark);
+  steelTex.repeat.set(2,2);
+  const steelMat = new THREE.MeshPhysicalMaterial({
+    color: dark ? 0xb7bdc0 : 0xd3d8da,
+    metalness: 0.72, roughness: 0.42,
+    clearcoat: 0.18, clearcoatRoughness: 0.35,
+    bumpMap: steelTex, bumpScale: 0.35,
+    envMapIntensity: 1.1
+  });
+  const steelMatDoor = steelMat.clone();
+  steelMatDoor.bumpMap = brushedMetalTexture(dark); steelMatDoor.bumpMap.repeat.set(1,3);
+
+  const darkTrimMat = new THREE.MeshStandardMaterial({color:0x1c1f20, metalness:0.4, roughness:0.6});
+  const grilleMat = new THREE.MeshStandardMaterial({map:grilleTexture(), color:0x2a2c2d, metalness:0.2, roughness:0.8});
+  const gasketMat = new THREE.MeshStandardMaterial({color:0x0c0d0d, metalness:0.1, roughness:0.9});
+  const dispenserPanelMat = new THREE.MeshPhysicalMaterial({color:0x15181a, metalness:0.5, roughness:0.5, clearcoat:0.2});
+  const dispenserGlowMat = new THREE.MeshBasicMaterial({color:0x35c2c8});
+  const logoMat = new THREE.MeshBasicMaterial({map: textPlaneTexture('LG', {size:30, color:'rgba(140,148,150,0.85)', weight:700}), transparent:true});
+
+  function box(w,h,d,mat){
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+
+  // Cabinet body (fills full envelope minus the door skin at the front)
+  const cabinet = box(MM.EXT_W, MM.EXT_H, MM.CABINET_D, steelMat);
+  cabinet.position.set(0, MM.EXT_H/2, MM.CABINET_D/2);
+  fridge.add(cabinet);
+
+  // Recessed base grille (toe-kick), set back from the door face
+  const kickDepth = 46;
+  const kick = box(MM.EXT_W-40, MM.KICK_H-10, kickDepth, grilleMat);
+  kick.position.set(0, (MM.KICK_H-10)/2 + 3, MM.EXT_D - kickDepth/2 - 90);
+  fridge.add(kick);
+
+  // Freezer drawer front
+  const freezer = box(MM.EXT_W, MM.FZ_H, MM.DOOR_THICK, steelMatDoor);
+  freezer.position.set(0, MM.KICK_H + MM.FZ_H/2, MM.CABINET_D + MM.DOOR_THICK/2);
+  fridge.add(freezer);
+
+  // freezer handle groove (horizontal, near top of drawer)
+  const fzHandle = box(MM.EXT_W-120, 16, 10, darkTrimMat);
+  fzHandle.position.set(0, MM.KICK_H + MM.FZ_H - 46, MM.EXT_D + 1);
+  fridge.add(fzHandle);
+
+  // reveal gasket line between freezer and doors
+  const revealY = MM.KICK_H + MM.FZ_H + MM.GAP_H/2;
+  const reveal = box(MM.EXT_W, MM.GAP_H, MM.DOOR_THICK+4, gasketMat);
+  reveal.position.set(0, revealY, MM.CABINET_D + MM.DOOR_THICK/2);
+  fridge.add(reveal);
+
+  // Doors
+  const leftX0 = -MM.EXT_W/2, leftX1 = leftX0 + MM.LEFT_W;
+  const rightX1 = MM.EXT_W/2, rightX0 = rightX1 - MM.RIGHT_W;
+  const doorCenterY = (MM.DOOR_Y0 + MM.DOOR_Y1)/2;
+  const doorZ = MM.CABINET_D + MM.DOOR_THICK/2;
+
+  const leftDoor = box(MM.LEFT_W, MM.DOOR_H, MM.DOOR_THICK, steelMatDoor);
+  leftDoor.position.set((leftX0+leftX1)/2, doorCenterY, doorZ);
+  fridge.add(leftDoor);
+
+  const rightDoor = box(MM.RIGHT_W, MM.DOOR_H, MM.DOOR_THICK, steelMatDoor);
+  rightDoor.position.set((rightX0+rightX1)/2, doorCenterY, doorZ);
+  fridge.add(rightDoor);
+
+  // center seam gasket
+  const seam = box(MM.CENTER_GAP, MM.DOOR_H, MM.DOOR_THICK+2, gasketMat);
+  seam.position.set((leftX1+rightX0)/2, doorCenterY, doorZ);
+  fridge.add(seam);
+
+  // recessed pocket handles on each door's inner edge
+  const handleH = MM.DOOR_H*0.65, handleW = 26, handleInset = 8;
+  const leftHandle = box(handleW, handleH, handleInset, darkTrimMat);
+  leftHandle.position.set(leftX1 - handleW/2 - 4, doorCenterY, doorZ + MM.DOOR_THICK/2 - handleInset/2);
+  fridge.add(leftHandle);
+  const rightHandle = box(handleW, handleH, handleInset, darkTrimMat);
+  rightHandle.position.set(rightX0 + handleW/2 + 4, doorCenterY, doorZ + MM.DOOR_THICK/2 - handleInset/2);
+  fridge.add(rightHandle);
+
+  // ice/water dispenser recess on left door
+  const dispW = 241, dispH = 356;
+  const dispCenterY = MM.DOOR_Y0 + MM.DOOR_H*0.55;
+  const dispenser = box(dispW, dispH, 14, dispenserPanelMat);
+  dispenser.position.set(leftX0 + MM.LEFT_W*0.42, dispCenterY, doorZ + MM.DOOR_THICK/2 - 6);
+  fridge.add(dispenser);
+  const paddle = box(dispW*0.55, 14, 10, darkTrimMat);
+  paddle.position.set(dispenser.position.x, dispCenterY - dispH*0.28, doorZ + MM.DOOR_THICK/2);
+  fridge.add(paddle);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(dispW*0.5, 20), dispenserGlowMat);
+  glow.position.set(dispenser.position.x, dispCenterY + dispH*0.3, doorZ + MM.DOOR_THICK/2 + 0.5);
+  fridge.add(glow);
+  const glowLight = new THREE.PointLight(0x35c2c8, 0.4, 220);
+  glowLight.position.copy(glow.position);
+  fridge.add(glowLight);
+
+  // subtle LG wordmark, lower right door
+  const logo = new THREE.Mesh(new THREE.PlaneGeometry(120,30), logoMat);
+  logo.position.set((rightX0+rightX1)/2, MM.DOOR_Y0 + 70, doorZ + MM.DOOR_THICK/2 + 0.5);
+  fridge.add(logo);
+
+  // Center the whole fridge in X for a balanced orbit target
+  fridge.position.x = 0;
+
+  // ---------------------------------------------------------------
+  // Resize
+  // ---------------------------------------------------------------
+  function resize(){
+    const w = innerWidth, h = innerHeight;
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+    renderer.setSize(w,h);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------------------------------------------------------------
+  // Pointer controls
+  // ---------------------------------------------------------------
+  let dragging=false, lastX=0, lastY=0;
+  canvas.addEventListener('pointerdown', e=>{
+    dragging=true; lastX=e.clientX; lastY=e.clientY; orbit.autoRotate=false;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY;
+    orbit.targetTheta -= dx*0.0045;
+    orbit.targetPhi = Math.min(Math.max(orbit.targetPhi - dy*0.0045, 0.35), Math.PI-0.35);
+  });
+  window.addEventListener('pointerup', ()=>dragging=false);
+  canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    orbit.targetRadius = Math.min(Math.max(orbit.targetRadius + e.deltaY*0.9, orbit.minR), orbit.maxR);
+  }, {passive:false});
+
+  // touch pinch-to-zoom
+  let pinchDist=null;
+  canvas.addEventListener('touchmove', e=>{
+    if(e.touches.length===2){
+      const dx=e.touches[0].clientX-e.touches[1].clientX;
+      const dy=e.touches[0].clientY-e.touches[1].clientY;
+      const d = Math.hypot(dx,dy);
+      if(pinchDist!=null){
+        orbit.targetRadius = Math.min(Math.max(orbit.targetRadius - (d-pinchDist)*4, orbit.minR), orbit.maxR);
+      }
+      pinchDist = d;
+    }
+  }, {passive:true});
+  canvas.addEventListener('touchend', ()=>pinchDist=null);
+
+  // ---------------------------------------------------------------
+  // Theme change watcher
+  // ---------------------------------------------------------------
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshTheme);
+  new MutationObserver(refreshTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+  function refreshTheme(){
+    const d = isDark();
+    envTex = equirectEnvTexture(d);
+    scene.background = envTex; scene.environment = envTex;
+    groundMat.opacity = d ? 0.45 : 0.28;
+  }
+
+  // ---------------------------------------------------------------
+  // Render loop
+  // ---------------------------------------------------------------
+  let firstFrame = true;
+  function animate(){
+    requestAnimationFrame(animate);
+    if(orbit.autoRotate) orbit.targetTheta += 0.0016;
+    orbit.theta += (orbit.targetTheta-orbit.theta)*0.08;
+    orbit.phi += (orbit.targetPhi-orbit.phi)*0.08;
+    orbit.radius += (orbit.targetRadius-orbit.radius)*0.08;
+    sphericalToCamera();
+    renderer.render(scene, camera);
+    if(firstFrame){
+      firstFrame=false;
+      const l = document.getElementById('loading');
+      l.style.opacity='0';
+      setTimeout(()=>l.remove(), 500);
+    }
+  }
+  animate();
+})();
+</script>
