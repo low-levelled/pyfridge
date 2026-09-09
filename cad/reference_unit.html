@@ -135,9 +135,10 @@
     <div id="title">pyfridge<small>Reference unit — exterior</small></div>
     <div class="divider"></div>
     <div class="chips">
-      <span class="chip"><b>Class</b>LG French door, ~28 cu ft</span>
-      <span class="chip"><b>Exterior WHD</b>35.75 × 70 × 34.4 in</span>
+      <span class="chip"><b>Closest match</b>LG LFXS27566S, 27 cu ft</span>
+      <span class="chip"><b>Exterior W×H×D</b>35.75 × 69.75 × 32.875 in</span>
       <span class="chip"><b>Fridge opening</b>34 × 42 in</span>
+      <span class="chip"><b>Dispenser</b>left door, confirmed</span>
     </div>
   </div>
 </div>
@@ -145,7 +146,7 @@
 <div class="hud" id="caption">
   <div class="panel">
     <div class="label">Confidence: mixed</div>
-    <p><strong>Cabinet envelope, door-opening size, and pocket-handle styling</strong> are drawn from published LG French-door spec sheets. <strong>Dispenser size/position, freezer-drawer height split, and door-width ratio</strong> are typical values for this appliance class, not confirmed against an LG diagram — treat as placeholder until we check a real spec sheet or photo for our exact model.</p>
+    <p><strong>Exterior envelope, cabinet-only and without-handles depth, and dispenser side (left)</strong> are confirmed against LG's own spec sheet for the LFXS27566S, the closest published match to our class. <strong>Door-width split, exact dispenser size/position, and the freezer-drawer height ratio</strong> have no public LG diagram to check against — still placeholder. Not modeled yet: LFXS27566S's Door-in-Door panel and second internal freezer drawer — pending a scope call.</p>
   </div>
 </div>
 
@@ -164,15 +165,15 @@
   // for which figures are verified vs. representative.
   // ---------------------------------------------------------------
   const MM = {
-    EXT_W: 908,      // 35.75in exterior width
-    EXT_H: 1778,      // 70in exterior height
-    DOOR_THICK: 48,   // French door panel thickness
-    CABINET_D: 826,   // body depth behind the doors
-    KICK_H: 80,       // recessed base grille height
-    FZ_H: 530,        // freezer drawer front height
-    GAP_H: 10,        // reveal between freezer drawer and doors
-    CENTER_GAP: 6,     // vertical seam between the two doors
-    LEFT_DOOR_FRAC: 0.52 // dispenser door takes the larger share
+    EXT_W: 908,      // 35.75in exterior width — LG spec sheet, confirmed
+    EXT_H: 1772,      // 69.75in to top of hinge — LG spec sheet, confirmed
+    DOOR_THICK: 98,   // 835mm (32.875in) without-handles depth minus cabinet-only depth — LG spec sheet, confirmed
+    CABINET_D: 737,   // 29in without-door depth — LG spec sheet, confirmed
+    KICK_H: 80,       // recessed base grille height — placeholder, no diagram found
+    FZ_H: 530,        // freezer drawer front height — placeholder, no diagram found
+    GAP_H: 10,        // reveal between freezer drawer and doors — placeholder
+    CENTER_GAP: 6,     // vertical seam between the two doors — placeholder
+    LEFT_DOOR_FRAC: 0.52 // dispenser door takes the larger share — placeholder, no diagram found
   };
   MM.EXT_D = MM.CABINET_D + MM.DOOR_THICK;
   MM.DOOR_H = MM.EXT_H - 20 - MM.GAP_H - MM.FZ_H - MM.KICK_H; // 20mm top reveal
