@@ -135,7 +135,9 @@
   const loader=new THREE.GLTFLoader();
   const roots={}; const parts={closed:[],open:[]}; let state='closed';
   const highlight=new THREE.MeshBasicMaterial({color:0xff6a1f,transparent:true,opacity:.6,depthTest:false});
-  function parseName(n){ const m=n.match(/^(\w+)\.(\d+)\s+(.*?)\s+\[(.*?)\]\s+\((\w)\)$/); return m?{layer:m[1],idx:+m[2],name:m[3],pn:m[4],tag:m[5]}:null; }
+  // glTF node names come back latin-1-decoded; repair the em dash used for "no part number"
+  const fixText=s=>s.replace(/â/g,'—').replace(/Ã/g,'×');
+  function parseName(n){ n=fixText(n); const m=n.match(/^(\w+)\.(\d+)\s+(.*?)\s+\[(.*?)\]\s+\((\w)\)$/); return m?{layer:m[1],idx:+m[2],name:m[3],pn:m[4]==='—'?'no part number (assembly-level)':m[4],tag:m[5]}:null; }
   function prep(which, gltf){
     const root=gltf.scene; root.visible=(which===state); scene.add(root); roots[which]=root;
     // GLTFLoader sanitizes node names (drops [ ] . :), so read the original names from the glTF JSON
