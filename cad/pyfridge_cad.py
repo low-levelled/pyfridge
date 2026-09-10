@@ -208,6 +208,16 @@ def build(open_state=False, with_mech=True):
         add(box(70, 6, 60, s * (W / 2 - 60), M["DOOR_Y0"] + 4, D + 30), f"Door support bracket {side}", "MJH63894301", "base", "C", "alu")
         add(box(6, H - kh - 40, 40, s * (W / 2 + 3), kh + (H - kh) / 2, D - 20), f"Decor panel {side}", "ACW73717312" if side == "L" else "ACW73717317", "base", "C", "alu")
     add(box(30, 10, 30, 0, M["DOOR_Y0"] - 5, D + 40), "Door stopper, centre", "AJC73112301", "base", "C", "grey")
+    for s, side in ((-1, "L"), (1, "R")):
+        add(box(24, 8, 24, s * (W / 2 - 24), H + 7, D + 70), f"Door stopper {side}, upper hinge", "MJB63649801", "base", "C", "grey")
+        add(cyl_v(10, 6, s * (W / 2 - 24), H + 14, D + 22), f"Hinge cap {side}", "MBL65077501", "base", "C", "grey")
+        ring = cq.Workplane("XY").circle(10.6).circle(7.4).extrude(3).translate(V(s * (W / 2 - 24), M["DOOR_Y0"] + 42, D + 22))
+        add(ring, f"Snap ring {side} (hinge pin)", "MGZ62766901", "base", "C", "alu")
+        add(box(60, 6, 50, s * (W / 2 - 60), kh + M["FZ_H"] + 4, D + 30), f"Door bracket {side} (freezer)", "MEG61899901", "base", "C", "alu")
+        add(box(W / 2 - 140, 10, 30, s * (W / 4 + 10), H - M["TOP_REVEAL"] / 2, D + T - 15), f"Decor cover {side} (top reveal)", "MCR64758001" if side == "L" else "MCR64776601", "base", "C", "dark")
+        add(box(40, 40, 20, s * (W / 2 - 80), H - 8, D + T - 10), f"Decor cover corner {side}", "MCR64788601", "base", "C", "dark")
+        add(cyl_x(20, 16, s * (W / 2 - 140), 20, 90), f"Rear roller {side}, inner", "MHA62652801" if side == "L" else "4580JQ3001B", "base", "C", "dark")
+    add(box(W - 60, 6, 30, 0, 4, D - 20), "Lower cover assembly, rear", "ACQ85891306", "base", "C", "dark")
 
     # ---- doors (sub-assemblies, hinge axis at origin) -------------------
     Wd, Hd = M["DOOR_W"], M["DOOR_H"]
@@ -236,6 +246,14 @@ def build(open_state=False, with_mech=True):
         for k in (-1, 1):
             bar = bar.union(cyl_z(9, hp - hr, X(Wd - 58), Hd / 2 + k * (ln / 2 - 60), T + (hp - hr) / 2 - hinge_z))
         add(bar, f"Bar handle {side} + studs (2.5 in protrusion)", "AED73593202", "doors", "C", "alu", sub)
+        # handle hardware
+        for k, nm in ((-1, "lower"), (1, "upper")):
+            add(cyl_z(hr + 0.5, 6, X(Wd - 58), Hd / 2 + k * (ln / 2 + 3), T + hp - hr - hinge_z), f"Handle end cap {side} {nm}", "MBL65278201", "doors", "C", "dark", sub)
+            add(box(24, 24, 6, X(Wd - 58), Hd / 2 + k * (ln / 2 - 60), T + 3 - hinge_z), f"Handle mounting bracket {side} {nm}", "AEJ73440302", "doors", "C", "alu", sub)
+            add(cyl_z(5, 20, X(Wd - 58), Hd / 2 + k * (ln / 2 - 60), T - 8 - hinge_z), f"Handle mounting stud {side} {nm} (1/4 in Allen)", "MJB63190001", "doors", "C", "alu", sub)
+        add(box(30, ln - 100, 4, X(Wd - 58), Hd / 2, T + 2 - hinge_z), f"Decor handle cover {side}", "MCR64995701" if side == "L" else "MCR64995702", "doors", "C", "dark", sub)
+        add(box(Wd - 40, 6, 4, X(Wd / 2), 8, -2 - hinge_z), f"Gasket holder {side}", "MEG64120401", "doors", "C", "grey", sub)
+        add(box(12, 26, 10, X(30), Hd - 30, -5 - hinge_z), f"Door position magnet {side}", "EBF62234513", "doors", "C", "dark", sub)
         if side == "L":
             dW, dH, cx, cy = 241, 356, Wd * 0.5, Hd * 0.55
             add(box(dW, dH, 20, X(cx), cy, T - 10 - hinge_z), "Dispenser recess + panel", "ACQ86599630", "doors", "P", "dark", sub)
@@ -248,6 +266,36 @@ def build(open_state=False, with_mech=True):
             add(frame_bin(419, 184, 130, X(Wd / 2), 320, -65 - hinge_z), "Gallon door bin (L)", "MAN63048701", "doors", "P", "clear", sub)
             add(frame_bin(419, 120, 110, X(Wd / 2), 120, -55 - hinge_z), "Modular door bin (L)", "AAP73631702", "doors", "P", "clear", sub)
             add(box(24, Hd - 40, 56, X(Wd - 12), Hd / 2, -28 - hinge_z), "Centre mullion (flipper), heated", "AGU75188619", "doors", "C", "dark", sub)
+            add(cyl_v(6, 120, X(Wd - 12), Hd - 140, -28 - hinge_z), "Mullion door spring", "MHY62044106", "doors", "C", "alu", sub)
+            # dispenser internals
+            add(box(dW + 16, dH + 16, 6, X(cx), cy, T - 1 - hinge_z), "Dispenser cover frame", "MCK62965301", "doors", "C", "dark", sub)
+            add(box(dW - 10, 60, 4, X(cx), cy + dH / 2 - 40, T - 18 - hinge_z), "Dispenser front cover, upper", "MCK69570701", "doors", "C", "dark", sub)
+            add(box(dW - 10, 60, 4, X(cx), cy - dH / 2 + 40, T - 18 - hinge_z), "Dispenser front cover, lower", "MCK71555401", "doors", "C", "dark", sub)
+            add(box(70, 30, 14, X(cx), cy - dH * 0.28 + 22, T - 6 - hinge_z), "Dispenser lever holder", "MEG63262301", "doors", "C", "dark", sub)
+            add(box(26, 14, 6, X(cx - 60), cy - dH * 0.28, T - 2 - hinge_z), "Lever button, water", "MBG64843402", "doors", "C", "grey", sub)
+            add(box(26, 14, 6, X(cx + 60), cy - dH * 0.28, T - 2 - hinge_z), "Lever button, ice", "MBG64707201", "doors", "C", "grey", sub)
+            add(box(dW * 0.55 + 8, 20, 4, X(cx), cy - dH * 0.28, T - 6 - hinge_z), "Dispenser lever cover", "MCK67046601", "doors", "C", "dark", sub)
+            add(box(10, 10, 12, X(cx + dW * 0.3), cy - dH * 0.28, T - 14 - hinge_z), "Dispenser micro switch", "6600JB3001C", "doors", "C", "dark", sub)
+            add(box(8, 8, 8, X(cx - dW * 0.3), cy - dH * 0.28, T - 14 - hinge_z), "Push button switch", "6600JR1002L", "doors", "C", "dark", sub)
+            add(cq.Workplane("XZ").circle(16).workplane(offset=-40).circle(4).loft().translate(V(X(cx), cy + 40, T - 30 - hinge_z)), "Water funnel (nozzle)", "MDR62242301", "doors", "C", "grey", sub)
+            add(box(dW - 20, 12, 60, X(cx), cy - dH / 2 + 8, T - 30 - hinge_z), "Dispenser drain tray", "AJP73574401", "doors", "C", "grey", sub)
+            add(box(dW - 40, 8, 40, X(cx), cy - dH / 2 + 2, T - 26 - hinge_z), "Drain tray, lower", "MJS62812601", "doors", "C", "grey", sub)
+            add(box(80, 90, 12, X(cx), cy + 90, T - 40 - hinge_z), "Ice dispenser duct door", "ABN73678303", "doors", "C", "dark", sub)
+            add(cyl_x(16, 30, X(cx + 70), cy + 90, T - 48 - hinge_z), "Ice door motor (AC geared)", "EAU59551204", "doors", "C", "black", sub)
+            add(box(40, 40, 10, X(cx + 70), cy + 90, T - 28 - hinge_z), "Ice door motor cover", "3550JA2273A", "doors", "C", "dark", sub)
+            add(box(6, 60, 6, X(cx - 50), cy + 90, T - 44 - hinge_z), "Dispenser door link", "MFF62463201", "doors", "C", "alu", sub)
+            add(cyl_v(4, 40, X(cx - 60), cy + 120, T - 44 - hinge_z), "Ice door lever spring", "4970JA3011K", "doors", "C", "alu", sub)
+            add(box(50, 160, 3, X(cx - dW / 2 - 45), cy + 40, T - 10 - hinge_z), "Display PCB", "EBR78631903", "doors", "C", "pcb", sub)
+            # ice maker sub-parts
+            add(cyl_x(5, 40, X(210), Hd - 570, -134 - hinge_z), "Ice bank door hinge, lower", "AEH74156201", "doors", "C", "alu", sub)
+            ibg = (
+                box(310, 6, 4, X(210), Hd - 262, -136 - hinge_z).union(box(310, 6, 4, X(210), Hd - 458, -136 - hinge_z))
+                .union(box(6, 200, 4, X(58), Hd - 360, -136 - hinge_z)).union(box(6, 200, 4, X(362), Hd - 360, -136 - hinge_z))
+            )
+            add(ibg, "Ice bin door gasket", "MDS64239202", "doors", "C", "gasket", sub)
+            add(box(300, 200, 6, X(210), Hd - 360, -134 - hinge_z), "Ice bin door", "—", "doors", "P", "clear", sub)
+            add(cyl_v(22, 60, X(210), Hd - 620, -70 - hinge_z), "Ice maker & auger motor assembly", "EAU60783850", "doors", "C", "black", sub)
+            add(box(320, 6, 130, X(210), Hd - 46, -65 - hinge_z), "Ice room cover, top", "MCK67979601", "doors", "C", "liner", sub)
         else:
             dw, dh, dx, dy = Wd - 80, Hd * 0.62, Wd / 2, Hd * 0.5 + 40
             hb = (
@@ -263,6 +311,10 @@ def build(open_state=False, with_mech=True):
             add(frame_bin(419, 184, 130, X(Wd / 2), 120, -65 - hinge_z), "Gallon door bin (R)", "MAN63048701", "doors", "P", "clear", sub)
             add(frame_bin(dw - 30, 100, 110, X(dx), Hd - 170, -55 - hinge_z), "Fixed door bin, upper (R)", "AAP73631802", "doors", "P", "clear", sub)
             add(cyl_z(11, 6, X(Wd - 58), Hd / 2 + ln / 2 - 120, T + hp - hr + 12 - hinge_z), "Door-in-Door release button", "MEB62915403", "doors", "C", "dark", sub)
+            add(box(dw, 8, 150, X(dx), dy + dh / 2 + 8, -75 - hinge_z), "Home Bar cover, upper", "MCK67480101", "doors", "C", "liner", sub)
+            add(box(dw, 8, 150, X(dx), dy - dh / 2 - 8, -75 - hinge_z), "Home Bar cover, lower", "MCK67979701", "doors", "C", "liner", sub)
+            add(cyl_v(6, 24, X(dx - dw / 2 - 6), dy + dh / 2 - 20, T / 2 - hinge_z), "Home Bar cap hinge (upper)", "—", "doors", "C", "alu", sub)
+            add(box(120, 30, 1, X(Wd / 2), 70, T + 0.5 - hinge_z), "Name plate / emblem", "MFT62346511", "doors", "C", "alu", sub)
         return sub
 
     ang = 105 if open_state else 0
@@ -331,6 +383,35 @@ def build(open_state=False, with_mech=True):
         c = cyl_x(7, 360, 0, M["FF_Y0"] + 18 + i * 16, z0 + 80 + i * 18)
         tank = c if tank is None else tank.union(c)
     add(tank, "Water tank (coiled reservoir)", "AJL72911502", "fresh", "C", "clear")
+    # filter, lamp covers, ducts, holders
+    add(box(90, 70, 130, -fw / 2 + 90, M["FF_Y1"] - 50, z0 + fd - 160), "Filter cover", "MCK67447801", "fresh", "C", "liner")
+    add(cyl_z(32, 30, -fw / 2 + 90, M["FF_Y1"] - 70, z0 + fd - 250), "Filter bypass cap", "ABN73019101", "fresh", "C", "grey")
+    add(cyl_z(42, 30, -fw / 2 + 90, M["FF_Y1"] - 70, z0 + fd - 70), "Filter head (LT700P socket)", "ADQ36011715", "fresh", "C", "liner")
+    for s, side, pn in ((-1, "L", "MCK66592001"), (1, "R", "MCK67153601")):
+        add(box(6, 580, 30, s * (fw / 2 - 8), M["FF_Y0"] + 640, z0 + fd - 120), f"LED lamp cover {side}", pn, "fresh", "C", "clear")
+    add(box(300, 4, 20, 60, M["FF_Y1"] - 4, z0 + fd - 150), "Ceiling LED module", "EAV61873612", "fresh", "C", "led")
+    add(box(320, 6, 34, 60, M["FF_Y1"] - 8, z0 + fd - 150), "Ceiling lamp cover", "MCK68069401", "fresh", "C", "clear")
+    add(box(240, 6, 30, 0, M["FF_Y0"] + 1000, z0 + 40), "Lamp cover, rear duct", "ACQ86133501", "fresh", "C", "clear")
+    add(box(220, 40, 30, 0, M["FF_Y0"] + 280, z0 + 20), "Duct connector", "MCZ62872001", "fresh", "C", "liner")
+    add(box(220, 700, 10, 0, M["FF_Y0"] + 640, z0 + 5), "Duct insulation", "MCZ63192901", "fresh", "C", "foam")
+    for x, pn in ((-90, "MBL61865301"), (90, "MBL61865401")):
+        add(cyl_z(14, 8, x, M["FF_Y1"] - 30, z0 + 42), "Duct cap", pn, "fresh", "C", "grey")
+    add(box(24, 900, 16, -fw / 2 + 14, M["FF_Y0"] + 540, z0 + 30), "Tube cover (water line, left wall)", "MCK67502201", "fresh", "C", "grey")
+    add(box(90, 90, 12, 0, M["FF_Y0"] + 930, z0 + 52), "Air cleaner filter element", "ADQ73214408", "fresh", "C", "foam")
+    add(box(400, 6, 130, 0, M["FF_Y0"] + 112, z0 + 130), "Reservoir cover", "EBS61443328", "fresh", "C", "liner")
+    for y, row in ((M["FF_Y0"] + 590, "B"), (M["FF_Y0"] + 840, "A")):
+        for i, x in enumerate((-380, 0, 380)):
+            add(box(26, 30, 16, x, y + 8, z0 + 18), f"Shelf holder row {row} rail {i + 1}", "MEG63060501" if i == 1 else "MEG64000201", "fresh", "C", "grey")
+    for s in (-1, 1):
+        sd = "L" if s < 0 else "R"
+        add(box(14, 40, 40, s * (fw / 2 - 14), M["FF_Y0"] + 280, zc), f"Drawer rail holder {sd}", "MEG63342501", "fresh", "C", "grey")
+        add(box(20, 20, 40, s * (fw / 2 - 30), M["FF_Y0"] + 272, zc + 260), f"Rail connector {sd}", "MCD62287601" if s < 0 else "MCD62287602", "fresh", "C", "grey")
+        add(box(12, 24, 500, s * (fw / 2 - 8), M["FF_Y0"] + 250, zc + 30), f"Crisper slide rail {sd}", "MGT61844004" if s < 0 else "MGT61844003", "fresh", "C", "alu")
+        add(box(16, 30, 300, s * (fw / 2 - 12), M["FF_Y0"] + 120, zc), f"Crisper rail guide {sd}", "AEC73637501" if s < 0 else "AEC73637502", "fresh", "C", "grey")
+        add(box(16, 30, 360, s * (W / 2 - ws - 12), ff + 330, D - 260), f"Freezer drawer guide {sd}", "MEA61842101", "freezer", "C", "grey")
+    add(box(160, 4, 14, 0, M["FZ_Y1"] - 4, D - 300), "Freezer LED", "EAV61873613", "freezer", "C", "led")
+    add(box(180, 6, 24, 0, M["FZ_Y1"] - 10, D - 300), "Freezer lamp cover", "ACQ87128801", "freezer", "C", "clear")
+    add(box(W - 2 * ws - 100, 8, 30, 0, ff + 8, D - 120), "Freezer tray, lower (discontinued)", "MJS62591801", "freezer", "C", "grey")
 
     # ---- refrigeration & controls ---------------------------------------
     comp = cyl_x(90, 300, 150, kh + 110, 140).union(box(340, 12, 220, 150, kh + 10, 140))
@@ -355,6 +436,31 @@ def build(open_state=False, with_mech=True):
     add(box(W - 80, 250, 4, 0, kh + 130, 2), "Machine room cover", "ACQ85930901", "mech", "C", "dark")
     for s, side in ((-1, "L"), (1, "R")):
         add(box(18, 26, 12, s * (W / 2 - ws - 20), M["FF_Y1"] - 30, D - 20), f"Door switch {side}", "EBF62234504", "mech", "C", "dark")
+    # machine-room mounts, electrics, routing, sensors
+    for i, (ax, bz_) in enumerate(((-1, -1), (1, -1), (-1, 1), (1, 1))):
+        add(cyl_v(14, 22, 150 + ax * 130, kh + 22, 140 + bz_ * 80), f"Compressor damper (rubber mount) {i + 1}", "MCQ67247501", "mech", "C", "gasket")
+        add(box(20, 6, 20, 150 + ax * 130, kh + 36, 140 + bz_ * 80), f"Compressor mount clip {i + 1}", "4620JA3015A", "mech", "C", "alu")
+    add(cyl_x(5, 90, 20, kh + 90, 140), "Sealing / process pipe", "MGE62010606", "mech", "C", "copper")
+    add(cyl_v(20, 50, 300, kh + 140, 60), "Run capacitor", "EAE58905704", "mech", "C", "black")
+    add(box(40, 30, 20, 320, kh + 110, 200), "Overload protector", "6750CL0001C", "mech", "C", "black")
+    add(box(30, 20, 14, 320, kh + 140, 200), "PTC thermistor / start relay", "EBG61486613", "mech", "C", "black")
+    add(box(36, 26, 18, 290, kh + 160, 230), "Compressor start device (PTC)", "EBG61486614", "mech", "C", "black")
+    add(box(150, 150, 6, -180, kh + 130, 200), "Condenser fan grill", "AEB73764503", "mech", "C", "dark")
+    add(box(150, 150, 6, 0, M["FZ_Y1"] - 60, z0 + 50), "Evaporator fan grill", "AEB73764506", "mech", "C", "dark")
+    for s, pn in ((-1, "5040JQ2002B"), (1, "5040JQ2003A")):
+        add(box(30, 40, 20, s * 60, M["FF_Y0"] + 300, z0 + 30), f"Damper motor support {'L' if s < 0 else 'R'}", pn, "mech", "C", "grey")
+    add(box(60, 40, 30, 0, M["FF_Y0"] + 300, z0 + 40), "Air damper (stepper)", "—", "mech", "C", "grey")
+    add(cyl_x(45, 20, -fw / 2 + 30, M["FF_Y1"] - 200, z0 + fd - 300), "Ice room fan + DC motor", "ADP73713301", "mech", "C", "grey")
+    add(box(80, 60, 6, 180, H - 420, 6), "Sensor control board", "EBR71326804", "mech", "C", "pcb")
+    add(box(300, 220, 30, 180, H - 260, -6), "PCB cover / case (outer)", "MCK67464101", "mech", "C", "dark")
+    add(cyl_v(6, H - 400, -W / 2 + 40, H / 2, 8), "Main wire harness", "EAD62160110", "mech", "C", "black")
+    add(box(40, 40, 40, -240, kh + 70, 30), "Secondary water valve", "5221JB2010G", "mech", "C", "black")
+    add(cyl_v(4, 1500, -W / 2 + ws / 2 + 4, kh + 900, D - 30).union(cyl_x(4, 300, -W / 2 + 160, H - 20, D - 30)), "Water line tube (valve → tank → left door)", "AJR73964201", "mech", "C", "clear")
+    add(box(20, 20, 20, -W / 2 + ws / 2 + 4, kh + 150, D - 30), "Tube connector", "MCD63827601", "mech", "C", "grey")
+    add(cyl_v(6, 200, 0, ff + 60, z0 + 60), "Drain tube to machine room", "AJR74125001", "mech", "C", "grey")
+    for x, y, z, nm in ((0, M["FF_Y0"] + 880, z0 + 40, "refrigerator"), (0, ff + 400, z0 + 60, "freezer"), (0, ff + 330, z0 + 48, "defrost"),
+                        (-fw / 2 + 40, M["FF_Y1"] - 120, z0 + fd - 100, "humidity"), (W / 2 - 40, H - 80, D - 60, "ambient")):
+        add(box(14, 14, 8, x, y, z), f"Temperature sensor, {nm}", "6500JB2002X", "mech", "C", "dark")
 
     return b
 
