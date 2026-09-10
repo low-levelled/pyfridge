@@ -43,14 +43,16 @@ The physical integration is a **thin frame insert** that mounts between the refr
    [door gasket] ←→ [cabinet face]
 ```
 
-**Reference unit:** LG French Door (34"W × 42"H usable interior opening)
+**Reference unit:** LG LFXS27566S French Door — fresh-food opening ≈ 32"W × 42"H × 23"D (818 × 1066 × 575 mm).
+Derived from LG's published 17.7 cu ft fresh-food capacity and 35¾" exterior width with typical ~1¾" foam walls;
+LG publishes no interior dimensions, so these are to be confirmed by measurement. Full derivation in `cad/spec/dimensions.md`.
 
 **Sensors:**
 - Intel RealSense D435 depth camera — interior 3D mapping and item identification
 - Weight sensors on delivery shelf — confirms retrieval success
 
 **Actuation:**
-- 3-axis gantry (X: 860mm, Y: 1066mm, Z: 400mm reach)
+- 3-axis gantry (X: ~815mm, Y: 1066mm, Z: 400mm reach — X to be set from the measured opening)
 - Soft gripper end effector (handles bottles, bags, containers)
 
 ---

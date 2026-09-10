@@ -48,8 +48,12 @@ Sibling LFXS28566* (2021/2023 manuals) differs slightly: depth w/o handle 33¾, 
 - Glide N' Serve full-width temperature-controlled drawer [C]; dimensions [P]
 - 9 door bins incl. Door-in-Door bins (CA sheet: 6 baskets + 2 adjustable gallon + Dairy Corner) [C]; gallon bin ≈ **16.5 × 7.25 in (419 × 184 mm)** per retailer snippet — approximate; Door-in-Door outer panel holds 2 bins (cheese & butter, condiment) [C]
 - Water filter LT700P upper-left interior; LT120F air filter [C]
-- Fridge-section interior opening: **README claims 34 × 42 in (864 × 1066 mm) — appears in no LG document [P]. Must be measured.**
-- Inner liner ABS; insulation PU foam; wall thickness not published [P]
+- Fridge-section interior opening — **derived [D], confirm by measurement**. LG publishes no interior dimensions, but three confirmed numbers constrain it:
+  - Exterior width 908 mm [C]; cyclopentane PU-foam walls in this class run ~40–50 mm each ⇒ **W ≈ 818 mm (32.2 in)**. (The README's earlier 34 in would require 22 mm walls — not realistic for foam insulation.)
+  - Door height 1102 mm (case height − reveal − freezer front) less ~18 mm gasket overlap top and bottom ⇒ **H ≈ 1066 mm (42 in)** — the README's 42 in holds.
+  - Fresh-food capacity 17.7 cu ft = 0.501 m³ [C] ⇒ D = 0.501 / (0.818 × 1.066) ≈ **575 mm (22.6 in)** usable depth to the door plane, including the door-bin zone. Back wall + duct + evaporator space = 737 − 575 = 162 mm, consistent with the Multi-Air Flow duct on the rear wall.
+  - Check: 32.2 × 42 × 22.6 in = 30,560 in³ = 17.7 cu ft ✓
+- Inner liner ABS; insulation PU foam; wall thickness not published — ~45 mm assumed [P]
 
 ## Interior — freezer
 
@@ -82,6 +86,6 @@ Interior: 1 LED lighting · 2 Water filter · 3 Air filter · 4 In-door icemaker
 
 ## Open items
 
-1. Measure fridge-section opening W×H×D and wall thickness on a real unit (drives issue #12 and every gantry number).
+1. Measure fridge-section opening W×H×D and wall thickness on a real unit to confirm the derived 818 × 1066 × 575 mm (drives issue #12 and every gantry number).
 2. Per-door widths, dispenser recess, freezer front height, shelf/drawer/bin dimensions — owner measurements or a physical unit.
 3. Resolve weight (342 vs 357 lb) and energy (533 vs 714 kWh) conflicts — likely revision differences.

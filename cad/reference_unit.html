@@ -152,7 +152,7 @@
     <div class="divider"></div>
     <div class="chips">
       <span class="chip"><b>W×H×D</b>35¾ × 69¾ × 32⅞ in</span>
-      <span class="chip"><b>Fridge cavity</b>34 × 42 × 26 in</span>
+      <span class="chip"><b>Fridge cavity</b>≈32 × 42 × 23 in (derived)</span>
       <span class="chip"><b>Capacity</b>17.7 + 8.9 = 26.6 cu ft</span>
       <span class="chip"><b>Sources</b>spec sheet · SM MFL62188073 · OM</span>
     </div>
@@ -217,10 +217,10 @@
     GAP_H: 10,           // P
     TOP_REVEAL: 15,      // P
     CENTER_GAP: 6,       // P
-    WALL_SIDE: 22,       // D  (908 − 864)/2 if the README's 34 in opening holds
+    WALL_SIDE: 45,       // P  typical cyclopentane-foam side wall for this class
     WALL_TOP: 33,        // P
-    WALL_BACK: 77,       // D  737 − 660 (schema Z max)
-    FF_W: 864, FF_H: 1066, FF_D: 660,  // README / sql/schema.sql — unverified against LG, must be measured
+    WALL_BACK: 162,      // D  737 − 575 (rear wall + duct + evaporator space)
+    FF_W: 818, FF_H: 1066, FF_D: 575,  // D  from LG 17.7 cu ft + 908 mm exterior: 0.818 × 1.066 × 0.575 m = 0.501 m³ — confirm by measurement
     FZ_FLOOR: 100,       // P
     DIV_T: 38,           // P  fridge/freezer divider
   };
@@ -399,7 +399,7 @@
   const floor = at(box(W, MM.FZ_FLOOR-MM.KICK_H, D, steel), 0, MM.KICK_H+(MM.FZ_FLOOR-MM.KICK_H)/2, D/2);
   const divider = at(box(W-2*MM.WALL_SIDE, MM.DIV_T, D-MM.WALL_BACK, foam), 0, MM.FZ_Y1+MM.DIV_T/2, MM.WALL_BACK+(D-MM.WALL_BACK)/2);
   const shell = new THREE.Group(); shell.add(sideL, sideR, top, back, floor);
-  G.shell.add(reg(shell, {name:'Cabinet (PCM steel outer case, PU-foam insulated)', pn:'—', layer:'shell', tag:'C', dims:fmt(W,H,D), note:'Outer case dimensions from LG spec sheet. Wall thickness is not published; 22 mm sides assumed from the README\'s 34 in opening.'}));
+  G.shell.add(reg(shell, {name:'Cabinet (PCM steel outer case, PU-foam insulated)', pn:'—', layer:'shell', tag:'C', dims:fmt(W,H,D), note:'Outer case dimensions from LG spec sheet. Wall thickness is not published; ~45 mm foam side walls assumed (typical for the class).'}));
   G.shell.add(reg(divider, {name:'Fridge / freezer divider (foam)', pn:'—', layer:'shell', tag:'P', dims:fmt(W-44, MM.DIV_T, D-MM.WALL_BACK)}));
   // inner liners (ABS) — fresh food and freezer
   const ffLiner = new THREE.Group();
@@ -409,7 +409,7 @@
   ffLiner.add(at(box(lt, MM.FF_H, MM.FF_D, liner), -MM.FF_W/2+lt/2, MM.FF_Y0+MM.FF_H/2, MM.FF_Z0+MM.FF_D/2));
   ffLiner.add(at(box(lt, MM.FF_H, MM.FF_D, liner),  MM.FF_W/2-lt/2, MM.FF_Y0+MM.FF_H/2, MM.FF_Z0+MM.FF_D/2));
   ffLiner.add(at(box(MM.FF_W, MM.FF_H, lt, liner), 0, MM.FF_Y0+MM.FF_H/2, MM.FF_Z0+lt/2));
-  G.shell.add(reg(ffLiner, {name:'Fresh-food inner liner (ABS)', pn:'—', layer:'shell', tag:'P', dims:fmt(MM.FF_W,MM.FF_H,MM.FF_D), note:'Cavity = README 34 × 42 in opening × schema.sql 660 mm depth. Not in any LG document — measure on a unit (issue #12).'}));
+  G.shell.add(reg(ffLiner, {name:'Fresh-food inner liner (ABS)', pn:'—', layer:'shell', tag:'P', dims:fmt(MM.FF_W,MM.FF_H,MM.FF_D), note:'Derived: LG 17.7 cu ft fresh-food capacity ÷ (818 mm width × 1066 mm height) = 575 mm depth. Not in any LG document — confirm on a unit (issue #12).'}));
   const fzLiner = new THREE.Group();
   const fzW=MM.FF_W, fzH=MM.FZ_Y1-MM.FZ_FLOOR, fzD=MM.FF_D;
   fzLiner.add(at(box(fzW, lt, fzD, liner), 0, MM.FZ_FLOOR+lt/2, MM.FF_Z0+fzD/2));
@@ -839,8 +839,9 @@
   G.dims.add(reg(dimLine([W/2+180, yB, zF+40], [W/2+180, H, zF+40], 'E  68⅜ in', [260,0,0]), {name:'Dim E — height to top of case', pn:'—', layer:'dims', tag:'C', dims:'1737 mm · 68⅜ in'}));
   G.dims.add(reg(dimLine([W/2+420, yB, zF+40], [W/2+420, MM.HINGE_TOP, zF+40], 'F  69¾ in', [260,120,0]), {name:'Dim F — height to top of hinge', pn:'—', layer:'dims', tag:'C', dims:'1772 mm · 69¾ in'}));
   G.dims.add(reg(dimLine([-W/2, -100, zF+40], [W/2, -100, zF+40], 'G  35¾ in', [0,-70,0]), {name:'Dim G — width', pn:'—', layer:'dims', tag:'C', dims:'908 mm · 35¾ in'}));
-  G.dims.add(reg(dimLine([-W/2-60, MM.FF_Y0, D+MM.DOOR_T+300], [-W/2-60, MM.FF_Y1, D+MM.DOOR_T+300], '42 in opening (README)', [-330,0,0]), {name:'Fridge-section opening height (README)', pn:'—', layer:'dims', tag:'P', dims:'1066 mm · 42 in — not in any LG document'}));
-  G.dims.add(reg(dimLine([-MM.FF_W/2, MM.FF_Y1+120, D+MM.DOOR_T+300], [MM.FF_W/2, MM.FF_Y1+120, D+MM.DOOR_T+300], '34 in opening (README)', [0,70,0]), {name:'Fridge-section opening width (README)', pn:'—', layer:'dims', tag:'P', dims:'864 mm · 34 in — not in any LG document'}));
+  G.dims.add(reg(dimLine([-W/2-60, MM.FF_Y0, D+MM.DOOR_T+300], [-W/2-60, MM.FF_Y1, D+MM.DOOR_T+300], '42 in opening (derived)', [-330,0,0]), {name:'Fridge-section opening height (derived)', pn:'—', layer:'dims', tag:'P', dims:'1066 mm · 42 in — door height less gasket overlap; confirm by measurement'}));
+  G.dims.add(reg(dimLine([-MM.FF_W/2, MM.FF_Y1+120, D+MM.DOOR_T+300], [MM.FF_W/2, MM.FF_Y1+120, D+MM.DOOR_T+300], '32 in opening (derived)', [0,70,0]), {name:'Fridge-section opening width (derived)', pn:'—', layer:'dims', tag:'P', dims:'818 mm · 32.2 in — 908 mm exterior less ~45 mm walls; confirm by measurement'}));
+  G.dims.add(reg(dimLine([MM.FF_W/2+40, MM.FF_Y0+40, MM.FF_Z0], [MM.FF_W/2+40, MM.FF_Y0+40, D], '23 in depth (derived)', [0,60,0]), {name:'Fridge-section usable depth (derived)', pn:'—', layer:'dims', tag:'P', dims:'575 mm · 22.6 in — 17.7 cu ft ÷ (818 × 1066); confirm by measurement'}));
 
   // =================================================================
   // View state + door animation

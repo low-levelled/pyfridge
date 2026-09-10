@@ -40,8 +40,9 @@ divider + upper pull-out tray.
 
 **Still placeholder (no LG document breaks it out):** per-door width split, dispenser
 recess size and position, freezer-drawer front height, handle bar diameter, kick-grille
-height and setback, wall/insulation thickness. The README's 34"W × 42"H fridge-section
-opening does not appear in any LG document — it must be measured on a unit.
+height and setback, wall/insulation thickness. The fridge-section opening is **derived**
+(≈ 818 × 1066 × 575 mm) from LG's 17.7 cu ft capacity and exterior width — it appears in
+no LG document and must be confirmed on a unit; see `spec/dimensions.md`.
 
 ## Roadmap for this directory
 

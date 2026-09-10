@@ -2,11 +2,14 @@
 -- PYFRIDGE — PostgreSQL Schema
 -- Hamilton-inspired smart fridge automation library
 --
--- Physical reference: LG French Door (34"W x 42"H interior)
+-- Physical reference: LG LFXS27566S French Door, fresh-food opening
+--   ≈ 32"W x 42"H x 23"D — derived from LG's 17.7 cu ft capacity and
+--   35¾" exterior with ~1¾" foam walls; not published by LG, confirm by
+--   measurement (see cad/spec/dimensions.md)
 -- Coordinate system: origin = bottom-left-back corner
---   X = left → right (mm), max ~864mm
+--   X = left → right (mm), max ~818mm
 --   Y = bottom → top (mm), max ~1066mm
---   Z = back → front (mm), max ~660mm
+--   Z = back → front (mm), max ~575mm (to the door plane)
 -- ============================================================
 
 DROP TABLE IF EXISTS protocol_selections CASCADE;
