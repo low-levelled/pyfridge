@@ -150,7 +150,9 @@
       let entry=byNode.get(n); if(!entry){ entry={meta,meshes:[]}; byNode.set(n,entry); parts[which].push(entry); }
       o.userData.entry=entry; o.userData.origMat=mat; entry.meshes.push(o); });
   }
-  function load(which){ return new Promise((res,rej)=>loader.load(GLB[which], g=>{prep(which,g);res();}, undefined, rej)); }
+  // Embedded base64 → ArrayBuffer → parse(). No fetch(), so it works under the artifact CSP.
+  function load(which){ return new Promise((res,rej)=>{ try{ const b=atob(GLB[which]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+    loader.parse(u.buffer, '', g=>{prep(which,g);res();}, rej); }catch(e){ rej(e); } }); }
 
   const layersEl=document.getElementById('layers');
   function applyLayers(){ Object.keys(LAYERS).forEach(k=>{ const on=document.getElementById('layer-'+k).checked; ['closed','open'].forEach(w=>parts[w].forEach(p=>{ if(p.meta.layer===k) p.meshes.forEach(m=>m.visible=on); })); }); }

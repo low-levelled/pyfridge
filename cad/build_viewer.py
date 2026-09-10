@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 tpl = open(os.path.join(HERE, "viewer_template.html"), encoding="utf-8").read()
 for key, fn in (("__GLB_CLOSED__", "LFXS27566S_closed.glb"), ("__GLB_OPEN__", "LFXS27566S_open.glb")):
     with open(os.path.join(HERE, "exports", fn), "rb") as f:
-        tpl = tpl.replace(key, "data:model/gltf-binary;base64," + base64.b64encode(f.read()).decode())
+        tpl = tpl.replace(key, base64.b64encode(f.read()).decode())
 os.makedirs(os.path.join(HERE, "out"), exist_ok=True)
 out = os.path.join(HERE, "out", "pyfridge_cad_assembly.html")
 with open(out, "w", encoding="utf-8") as f:
