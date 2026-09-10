@@ -327,7 +327,8 @@
   const dark = isDark();
   const steel = new THREE.MeshPhysicalMaterial({color:dark?0xb7bdc0:0xd3d8da, metalness:0.72, roughness:0.42, clearcoat:0.18, clearcoatRoughness:0.35, bumpMap:brushedTex(dark), bumpScale:0.35, envMapIntensity:1.1});
   steel.bumpMap.repeat.set(2,2);
-  const steelDoor = steel.clone(); steelDoor.bumpMap = brushedTex(dark); steelDoor.bumpMap.repeat.set(1,3);
+  // extruded door slabs carry mm-scale UVs, so the brushed texture repeats per ~400 mm
+  const steelDoor = steel.clone(); steelDoor.bumpMap = brushedTex(dark); steelDoor.bumpMap.repeat.set(0.0025, 0.0025);
   const bar = steel.clone(); bar.bumpMap=null; bar.roughness=0.3; bar.metalness=0.85;
   const liner = new THREE.MeshStandardMaterial({color:0xf1f3f3, roughness:0.55, metalness:0.02});
   const linerDoor = new THREE.MeshStandardMaterial({color:0xeceff0, roughness:0.6, metalness:0.02});
@@ -372,6 +373,19 @@
   }
   function box(w,h,d,mat){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.castShadow=true; m.receiveShadow=true; return m; }
   function cyl(r,len,mat,seg){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,seg||20),mat); m.castShadow=true; return m; }
+  // "Side Rounded" door slab (SM spec table): rounded-rect profile extruded in z with a bevel on both faces
+  function roundedSlab(w,h,d,r,mat){
+    const s = new THREE.Shape();
+    const x0=-w/2, y0=-h/2, x1=w/2, y1=h/2;
+    s.moveTo(x0+r, y0); s.lineTo(x1-r, y0); s.quadraticCurveTo(x1, y0, x1, y0+r);
+    s.lineTo(x1, y1-r); s.quadraticCurveTo(x1, y1, x1-r, y1);
+    s.lineTo(x0+r, y1); s.quadraticCurveTo(x0, y1, x0, y1-r);
+    s.lineTo(x0, y0+r); s.quadraticCurveTo(x0, y0, x0+r, y0);
+    const bevel = Math.min(r, d/3);
+    const g = new THREE.ExtrudeGeometry(s, {depth:d-2*bevel, bevelEnabled:true, bevelThickness:bevel, bevelSize:bevel, bevelSegments:4, curveSegments:6});
+    g.translate(0, 0, bevel - d/2);
+    const m = new THREE.Mesh(g, mat); m.castShadow=true; m.receiveShadow=true; return m;
+  }
   function at(m,x,y,z){ m.position.set(x,y,z); return m; }
 
   // =================================================================
@@ -446,7 +460,7 @@
     const Wd = MM.DOOR_W, Hd = MM.DOOR_H, T = MM.DOOR_T;
     // door slab: steel skin + liner
     const slab = new THREE.Group();
-    slab.add(at(box(Wd, Hd, T-12, steelDoor), Wd/2, Hd/2, 12+(T-12)/2));
+    slab.add(at(roundedSlab(Wd, Hd, T-12, 14, steelDoor), Wd/2, Hd/2, 12+(T-12)/2));
     slab.add(at(box(Wd-16, Hd-16, 12, linerDoor), Wd/2, Hd/2, 6));
     reg(slab, {name:`${side==='L'?'Left':'Right'} refrigerator door (foam-filled, PCM stainless)`, pn: side==='L'?'ADD74296905':'ADC74665810', layer:'doors', tag:'C', dims:fmt(Wd,Hd,T), note:'Width derived from LG door-open figures (≈17.75 in each). Thickness = depth w/o handles − depth w/o door.'});
     g.add(slab);
@@ -531,7 +545,7 @@
   // =================================================================
   const fz = new THREE.Group(); fz.name='freezerDrawer';
   const fzFront = new THREE.Group();
-  fzFront.add(at(box(W, MM.FZ_H, MM.DOOR_T-12, steelDoor), 0, MM.KICK_H+MM.FZ_H/2, D+12+(MM.DOOR_T-12)/2));
+  fzFront.add(at(roundedSlab(W, MM.FZ_H, MM.DOOR_T-12, 14, steelDoor), 0, MM.KICK_H+MM.FZ_H/2, D+12+(MM.DOOR_T-12)/2));
   fzFront.add(at(box(W-16, MM.FZ_H-16, 12, linerDoor), 0, MM.KICK_H+MM.FZ_H/2, D+6));
   reg(fzFront, {name:'Freezer drawer front (foam-filled)', pn:'ADC73928108 / ADD73719008', layer:'doors', tag:'C', dims:fmt(W,MM.FZ_H,MM.DOOR_T), note:'Front height is a placeholder (~20–21 in from photo proportion).'});
   fz.add(fzFront);

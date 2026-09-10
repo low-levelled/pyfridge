@@ -22,7 +22,7 @@ Sources (facts extracted; LG's PDFs are copyrighted and are **not** committed he
 
 | File | What it is |
 |---|---|
-| `reference_unit.html` | Full assembly, part by part. Closed / Open / Ghost views, door-angle slider, per-layer toggles (shell, doors, fresh-food, freezer, refrigeration & controls, hinges/base). Every mesh carries its LG part number and a C/P confidence tag; hover for dimensions, click to pin, filterable parts list. |
+| `reference_unit.html` | Full assembly, 218 registered parts. Closed / Open / Ghost views, door-angle slider, per-layer toggles (shell, doors, fresh-food, freezer, refrigeration & controls, hinges/base, LG dimension lines A–I). Every mesh carries its LG part number and a C/P confidence tag; hover for dimensions, click to pin, filterable parts list. Browser-verified. |
 | `spec/dimensions.md` | Every dimension we have, each tagged **confirmed** (LG document) / **measured** (owner) / **placeholder** (no source yet). |
 | `spec/parts.md` | Full parts inventory with LG part numbers, grouped by assembly. |
 
