@@ -8,3 +8,6 @@ venv/
 dist/
 build/
 .DS_Store
+
+# CAD build outputs (STEP/GLB are committed from cad/exports/)
+cad/out/
