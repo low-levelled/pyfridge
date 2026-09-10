@@ -1,0 +1,208 @@
+<title>pyfridge CAD Assembly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg-top:#eef2f3; --bg-bottom:#d7dee0; --surface:#ffffffd9; --surface-solid:#ffffff;
+    --ink:#16211f; --ink-muted:#55666a; --line:#c3cdd0;
+    --accent:#ff6a1f; --accent-ink:#8a3512; --accent-2:#1f8a90; --accent-2-ink:#0f5458; --accent-2-soft:#1f8a9022;
+    --shadow: 0 8px 28px -8px rgba(20,30,32,0.25);
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg-top:#10161a; --bg-bottom:#060a0c; --surface:#141b1ed9; --surface-solid:#141b1e;
+    --ink:#e6eef0; --ink-muted:#8fa0a4; --line:#263136;
+    --accent:#ff7d33; --accent-ink:#ffd8bd; --accent-2:#35c2c8; --accent-2-ink:#bdf3f4; --accent-2-soft:#35c2c82a;
+    --shadow: 0 8px 28px -8px rgba(0,0,0,0.6); } }
+  :root[data-theme="dark"]{
+    --bg-top:#10161a; --bg-bottom:#060a0c; --surface:#141b1ed9; --surface-solid:#141b1e;
+    --ink:#e6eef0; --ink-muted:#8fa0a4; --line:#263136;
+    --accent:#ff7d33; --accent-ink:#ffd8bd; --accent-2:#35c2c8; --accent-2-ink:#bdf3f4; --accent-2-soft:#35c2c82a;
+    --shadow: 0 8px 28px -8px rgba(0,0,0,0.6); }
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{background:var(--bg-bottom);color:var(--ink);font-family:"Public Sans",system-ui,sans-serif;overflow:hidden;height:100vh}
+  #stage{position:fixed;inset:0} canvas#gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  .hud{position:fixed;z-index:5;pointer-events:none}
+  .panel{pointer-events:auto;background:var(--surface);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .label{font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+  #topbar{top:16px;left:16px;right:16px;display:flex;gap:12px;flex-wrap:wrap}
+  #topbar .panel{display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
+  #title{font-weight:700;font-size:15px;white-space:nowrap} #title small{display:block;font-weight:500;font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+  .divider{width:1px;height:28px;background:var(--line)}
+  .chip{font-family:"IBM Plex Mono",monospace;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:5px 9px;white-space:nowrap}
+  .chip b{font-weight:600;color:var(--ink-muted);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;margin-right:6px}
+  #controls{left:16px;top:96px;width:220px} #controls .panel{padding:12px 14px}
+  .seg{display:flex;gap:4px;background:var(--surface-solid);border:1px solid var(--line);border-radius:7px;padding:3px;margin-top:6px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--ink-muted);font:inherit;font-size:11.5px;font-weight:600;padding:6px 4px;border-radius:5px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--accent-2);color:#fff} .seg button:focus-visible{outline:2px solid var(--accent)}
+  .layers{display:flex;flex-direction:column;gap:6px;margin-top:8px} .layers label{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
+  .layers input{accent-color:var(--accent-2);width:14px;height:14px;margin:0} .layers .sw{width:10px;height:10px;border-radius:2px}
+  .layers .n{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-muted)}
+  .row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11.5px;color:var(--ink-muted)} .row input[type=range]{flex:1;accent-color:var(--accent-2)}
+  #reset{width:100%;margin-top:10px;border:1px solid var(--line);background:var(--surface-solid);color:var(--ink);border-radius:6px;padding:6px;cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px}
+  #parts{right:16px;top:96px;bottom:16px;width:320px;display:flex;flex-direction:column}
+  #parts .panel{display:flex;flex-direction:column;flex:1;min-height:0;padding:0;overflow:hidden}
+  #parts header{padding:12px 14px 8px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:8px}
+  #parts header .count{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-muted)}
+  #filter{margin:8px 10px 6px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-solid);color:var(--ink);font:inherit;font-size:12px}
+  #plist{overflow:auto;flex:1;padding:0 4px 8px}
+  #plist h4{margin:10px 10px 4px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);display:flex;align-items:center;gap:6px} #plist h4 .sw{width:8px;height:8px;border-radius:2px}
+  .pitem{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px}
+  .pitem:hover{background:var(--accent-2-soft)} .pitem.sel{background:var(--accent-2);color:#fff}
+  .pitem .pn{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-muted)} .pitem.sel .pn{color:#e8fbfb}
+  .tag{font-size:9px;font-weight:700;letter-spacing:.06em;border-radius:3px;padding:1px 4px;align-self:center}
+  .tag.C{background:var(--accent-2-soft);color:var(--accent-2-ink)} .tag.D{background:#b04fd622;color:#6b2a86} .tag.P{background:#ff6a1f22;color:var(--accent-ink)} .pitem.sel .tag{background:#ffffff33;color:#fff}
+  #readout{left:16px;bottom:16px;max-width:min(520px,calc(100vw - 32px))} #readout .panel{padding:11px 14px}
+  #readout .name{font-weight:700;font-size:14px} #readout .meta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-muted);margin-top:2px}
+  #readout .note{font-size:12px;color:var(--ink-muted);margin-top:6px;line-height:1.45}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg-bottom);z-index:10;transition:opacity .5s;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+  @media (max-width:900px){#parts{display:none}}
+  @media (max-width:640px){#controls{top:auto;bottom:120px;width:calc(100vw - 32px)} .layers{flex-direction:row;flex-wrap:wrap;gap:6px 14px} .layers .n{display:none} #readout{right:16px}}
+</style>
+
+<div id="loading">Loading CAD assembly…</div>
+<div id="stage"><canvas id="gl"></canvas></div>
+
+<div class="hud" id="topbar"><div class="panel">
+  <div id="title">pyfridge<small>CAD assembly — LG LFXS27566S</small></div>
+  <div class="divider"></div>
+  <span class="chip"><b>Source</b>cad/pyfridge_cad.py → STEP</span>
+  <span class="chip"><b>Parts</b><span id="chipParts">…</span></span>
+  <span class="chip"><b>Envelope</b>920 × 1772 × 900 mm</span>
+</div></div>
+
+<div class="hud" id="controls"><div class="panel">
+  <div class="label">State</div>
+  <div class="seg" role="group"><button id="st-closed" aria-pressed="true">Closed</button><button id="st-open" aria-pressed="false">Open</button></div>
+  <div class="row"><span>Ghost shell</span><input id="ghost" type="checkbox" style="accent-color:var(--accent-2)"></div>
+  <div class="label" style="margin-top:12px">Layers</div>
+  <div class="layers" id="layers"></div>
+  <button id="reset">Reset camera</button>
+</div></div>
+
+<div class="hud" id="parts"><div class="panel">
+  <header><span class="label">STEP part tree</span><span class="count" id="pcount"></span></header>
+  <input id="filter" type="search" placeholder="Filter by name or part #" aria-label="Filter parts">
+  <div id="plist"></div>
+</div></div>
+
+<div class="hud" id="readout"><div class="panel">
+  <div class="name" id="r-name">Hover a part</div>
+  <div class="meta" id="r-meta">This is the exported CAD geometry itself (glTF from the same CadQuery build as the STEP), not the hand-built web model.</div>
+  <div class="note" id="r-note"></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function(){
+  "use strict";
+  const GLB = { closed: "__GLB_CLOSED__", open: "__GLB_OPEN__" };
+  const LAYERS = {
+    shell:{name:'Cabinet shell',color:'#9fb0b4'}, doors:{name:'Doors & drawer front',color:'#6b7c82'}, fresh:{name:'Fresh-food interior',color:'#1f8a90'},
+    freezer:{name:'Freezer interior',color:'#4f9fd6'}, mech:{name:'Refrigeration & controls',color:'#ff6a1f'}, base:{name:'Hinges, base & trim',color:'#c48b2c'},
+  };
+  function isDark(){ const t=document.documentElement.getAttribute('data-theme'); if(t==='dark')return true; if(t==='light')return false; return matchMedia('(prefers-color-scheme: dark)').matches; }
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const canvas=document.getElementById('gl');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(32, innerWidth/innerHeight, 10, 30000);
+  // glTF is Y-up; CadQuery's +Y (front) became -Z. Target the cabinet centre.
+  const target=new THREE.Vector3(0, 1737*0.48, -450);
+  function homeR(){ const a=innerWidth/innerHeight; return a<1.2?6200:a<1.8?5400:4900; }
+  const HOME={r:homeR(), t:Math.PI-0.62, p:1.32};
+  const orbit={r:HOME.r,t:HOME.t,p:HOME.p,tR:HOME.r,tT:HOME.t,tP:HOME.p,auto:!reduced};
+  function place(){ const sp=Math.sin(orbit.p),cp=Math.cos(orbit.p); camera.position.set(target.x+orbit.r*sp*Math.sin(orbit.t), target.y+orbit.r*cp, target.z+orbit.r*sp*Math.cos(orbit.t)); camera.lookAt(target); }
+  place();
+
+  function envTex(dark){ const w=512,h=256,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,h);
+    if(dark){g.addColorStop(0,'#2a3438');g.addColorStop(.35,'#151b1e');g.addColorStop(1,'#050708');}else{g.addColorStop(0,'#ffffff');g.addColorStop(.35,'#dfe6e8');g.addColorStop(1,'#aab4b7');}
+    x.fillStyle=g;x.fillRect(0,0,w,h);x.fillStyle=dark?'rgba(0,0,0,.35)':'rgba(255,255,255,.5)';x.fillRect(0,h*.62,w,h*.06);
+    const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;t.encoding=THREE.sRGBEncoding;return t; }
+  let env=envTex(isDark()); scene.background=env; scene.environment=env;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x30363a,.55));
+  const key=new THREE.DirectionalLight(0xfff4e8,1.3); key.position.set(1400,2400,-1800); key.castShadow=true; key.shadow.mapSize.set(2048,2048);
+  key.shadow.camera.near=100;key.shadow.camera.far=8000;key.shadow.camera.left=-1800;key.shadow.camera.right=1800;key.shadow.camera.top=1800;key.shadow.camera.bottom=-1800;key.shadow.bias=-0.0008; scene.add(key);
+  const fill=new THREE.DirectionalLight(0xdce8f5,.5); fill.position.set(-1800,900,-900); scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xbfe9ff,.55); rim.position.set(-400,1600,2000); scene.add(rim);
+  const groundMat=new THREE.ShadowMaterial({opacity:isDark()?.45:.28}); const ground=new THREE.Mesh(new THREE.PlaneGeometry(12000,12000),groundMat); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+  // ---- load both states -------------------------------------------
+  const loader=new THREE.GLTFLoader();
+  const roots={}; const parts={closed:[],open:[]}; let state='closed';
+  const highlight=new THREE.MeshBasicMaterial({color:0xff6a1f,transparent:true,opacity:.6,depthTest:false});
+  function parseName(n){ const m=n.match(/^(\w+)\.(\d+)\s+(.*?)\s+\[(.*?)\]\s+\((\w)\)$/); return m?{layer:m[1],idx:+m[2],name:m[3],pn:m[4],tag:m[5]}:null; }
+  function prep(which, gltf){
+    const root=gltf.scene; root.visible=(which===state); scene.add(root); roots[which]=root;
+    // GLTFLoader sanitizes node names (drops [ ] . :), so read the original names from the glTF JSON
+    const json=gltf.parser.json, assoc=gltf.parser.associations;
+    const origName=o=>{ const a=assoc.get(o); return (a && a.nodes!==undefined) ? (json.nodes[a.nodes].name||'') : ''; };
+    const byNode=new Map();
+    root.traverse(o=>{ if(!o.isMesh) return; o.castShadow=true; o.receiveShadow=true;
+      // walk up to the named part node; one entry per part, many mesh primitives each
+      let n=o, meta=null; while(n && !(meta=parseName(origName(n)))) n=n.parent; if(!meta) return;
+      const mat=o.material; mat.side=THREE.DoubleSide; if(mat.opacity<1) { mat.transparent=true; mat.depthWrite=false; }
+      mat.envMapIntensity=1.0; if(meta.layer==='shell'||meta.layer==='doors'){ mat.userData.ghostable=true; }
+      let entry=byNode.get(n); if(!entry){ entry={meta,meshes:[]}; byNode.set(n,entry); parts[which].push(entry); }
+      o.userData.entry=entry; o.userData.origMat=mat; entry.meshes.push(o); });
+  }
+  function load(which){ return new Promise((res,rej)=>loader.load(GLB[which], g=>{prep(which,g);res();}, undefined, rej)); }
+
+  const layersEl=document.getElementById('layers');
+  function applyLayers(){ Object.keys(LAYERS).forEach(k=>{ const on=document.getElementById('layer-'+k).checked; ['closed','open'].forEach(w=>parts[w].forEach(p=>{ if(p.meta.layer===k) p.meshes.forEach(m=>m.visible=on); })); }); }
+  function applyGhost(){ const g=document.getElementById('ghost').checked; ['closed','open'].forEach(w=>parts[w].forEach(p=>p.meshes.forEach(mesh=>{ const m=mesh.userData.origMat; if(m.userData.ghostable){ m.transparent=g||(m.userData.o0??1)<1; m.opacity=g?.16:(m.userData.o0??1); m.depthWrite=!g; } }))); }
+  function setState(s){ state=s; ['closed','open'].forEach(w=>{ if(roots[w]) roots[w].visible=(w===s); document.getElementById('st-'+w).setAttribute('aria-pressed',String(w===s)); }); select(null); renderList(); }
+
+  const plist=document.getElementById('plist'), filter=document.getElementById('filter'); let selected=null, hl=[];
+  function renderList(){ const q=filter.value.trim().toLowerCase(); plist.innerHTML='';
+    Object.entries(LAYERS).forEach(([k,v])=>{ const items=parts[state].filter(p=>p.meta.layer===k&&(!q||p.meta.name.toLowerCase().includes(q)||p.meta.pn.toLowerCase().includes(q))).sort((a,b)=>a.meta.idx-b.meta.idx);
+      if(!items.length) return; const h=document.createElement('h4'); h.innerHTML=`<span class="sw" style="background:${v.color}"></span>${v.name}`; plist.appendChild(h);
+      items.forEach(p=>{ const d=document.createElement('div'); d.className='pitem'+(p===selected?' sel':''); d.innerHTML=`<span>${p.meta.name}</span><span class="tag ${p.meta.tag}">${p.meta.tag}</span><span class="pn">${p.meta.pn}</span>`; d.addEventListener('click',()=>select(p===selected?null:p)); plist.appendChild(d); }); }); }
+  filter.addEventListener('input',renderList);
+  const rName=document.getElementById('r-name'),rMeta=document.getElementById('r-meta'),rNote=document.getElementById('r-note');
+  function show(p){ if(!p){rName.textContent='Hover a part';rMeta.textContent='This is the exported CAD geometry itself (glTF from the same CadQuery build as the STEP), not the hand-built web model.';rNote.textContent='';return;}
+    rName.textContent=p.meta.name; rMeta.textContent=`${p.meta.pn} · ${LAYERS[p.meta.layer].name} · ${p.meta.layer}.${String(p.meta.idx).padStart(3,'0')}`;
+    rNote.textContent=p.meta.tag==='C'?'Confirmed in an LG document.':p.meta.tag==='D'?'Derived from LG figures.':'Placeholder geometry — to be measured.'; }
+  function select(p){ hl.forEach(m=>m.material=m.userData.origMat); hl=[]; selected=p; if(p){ p.meshes.forEach(m=>{ m.material=highlight; hl.push(m); }); } show(p); renderList(); }
+
+  const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let hovered=null;
+  function pick(e){ const r=canvas.getBoundingClientRect(); ptr.x=((e.clientX-r.left)/r.width)*2-1; ptr.y=-((e.clientY-r.top)/r.height)*2+1; ray.setFromCamera(ptr,camera);
+    const root=roots[state]; if(!root) return null; const hits=ray.intersectObject(root,true).filter(h=>h.object.userData.entry&&vis(h.object)); return hits.length?hits[0].object.userData.entry:null; }
+  function vis(o){ while(o){ if(!o.visible) return false; o=o.parent;} return true; }
+  let drag=false,moved=false,lx=0,ly=0;
+  canvas.addEventListener('pointerdown',e=>{drag=true;moved=false;lx=e.clientX;ly=e.clientY;orbit.auto=false;canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{ if(drag){const dx=e.clientX-lx,dy=e.clientY-ly; if(Math.abs(dx)+Math.abs(dy)>2)moved=true; lx=e.clientX;ly=e.clientY; orbit.tT-=dx*.0045; orbit.tP=Math.min(Math.max(orbit.tP-dy*.0045,.3),Math.PI-.3); return;}
+    const p=pick(e); if(p!==hovered){hovered=p; canvas.style.cursor=p?'pointer':'grab'; if(!selected) show(p);} });
+  addEventListener('pointerup',e=>{ if(drag&&!moved){const p=pick(e); select(p===selected?null:p);} drag=false; });
+  canvas.addEventListener('wheel',e=>{e.preventDefault(); orbit.tR=Math.min(Math.max(orbit.tR+e.deltaY*1.1,1200),8000);},{passive:false});
+  let pinch=null; canvas.addEventListener('touchmove',e=>{ if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); if(pinch!=null) orbit.tR=Math.min(Math.max(orbit.tR-(d-pinch)*4,1200),8000); pinch=d;} },{passive:true});
+  canvas.addEventListener('touchend',()=>pinch=null);
+  document.getElementById('reset').addEventListener('click',()=>{orbit.tR=HOME.r;orbit.tT=HOME.t;orbit.tP=HOME.p;});
+  document.getElementById('st-closed').addEventListener('click',()=>setState('closed'));
+  document.getElementById('st-open').addEventListener('click',()=>setState('open'));
+  document.getElementById('ghost').addEventListener('change',applyGhost);
+
+  function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);} addEventListener('resize',resize); resize();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',refresh); new MutationObserver(refresh).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  function refresh(){const d=isDark();env=envTex(d);scene.background=env;scene.environment=env;groundMat.opacity=d?.45:.28;}
+
+  let first=true;
+  function animate(){ requestAnimationFrame(animate); if(orbit.auto) orbit.tT+=.0014; orbit.t+=(orbit.tT-orbit.t)*.08; orbit.p+=(orbit.tP-orbit.p)*.08; orbit.r+=(orbit.tR-orbit.r)*.08; place(); renderer.render(scene,camera);
+    if(first&&roots.closed){first=false;const l=document.getElementById('loading');l.style.opacity='0';setTimeout(()=>l.remove(),500);} }
+  animate();
+
+  const rememberOpacity=w=>parts[w].forEach(p=>p.meshes.forEach(m=>{ if(m.userData.origMat.userData.o0===undefined) m.userData.origMat.userData.o0=m.userData.origMat.opacity; }));
+  load('closed').then(()=>{
+    rememberOpacity('closed');
+    Object.entries(LAYERS).forEach(([k,v])=>{ const n=parts.closed.filter(p=>p.meta.layer===k).length; const lab=document.createElement('label');
+      lab.innerHTML=`<input type="checkbox" id="layer-${k}" checked><span class="sw" style="background:${v.color}"></span>${v.name}<span class="n">${n}</span>`; lab.querySelector('input').addEventListener('change',applyLayers); layersEl.appendChild(lab); });
+    document.getElementById('pcount').textContent=parts.closed.length+' parts'; document.getElementById('chipParts').textContent=parts.closed.length+' named parts · 250 solids';
+    renderList(); const l=document.getElementById('loading'); if(l){ l.style.opacity='0'; setTimeout(()=>l.remove(),400); } return load('open');
+  }).then(()=>{ rememberOpacity('open'); applyLayers(); })
+    .catch(e=>{ document.getElementById('loading').textContent='Could not load the CAD assembly: '+e; });
+})();
+</script>
