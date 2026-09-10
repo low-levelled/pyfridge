@@ -295,8 +295,8 @@
     ctx.fillStyle=dark?'rgba(0,0,0,0.35)':'rgba(255,255,255,0.5)';ctx.fillRect(0,h*0.62,w,h*0.06);
     const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;t.encoding=THREE.sRGBEncoding;return t;
   }
-  function textTex(text,size,color){
-    const w=256,h=64,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
+  function textTex(text,size,color,width){
+    const w=width||256,h=64,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
     ctx.fillStyle=color;ctx.font=`700 ${size}px "Public Sans", sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,w/2,h/2);
     const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
   }
@@ -359,6 +359,7 @@
     freezer: {name:'Freezer interior', color:'#4f9fd6'},
     mech:    {name:'Refrigeration & controls', color:'#ff6a1f'},
     base:    {name:'Hinges, base & trim', color:'#c48b2c'},
+    dims:    {name:'LG dimension lines (A–I)', color:'#b04fd6', off:true},
   };
   const G = {}; Object.keys(LAYERS).forEach(k=>{ G[k]=new THREE.Group(); G[k].name=k; scene.add(G[k]); });
   const parts = []; // {mesh(es), name, pn, layer, tag, dims, note}
@@ -662,6 +663,172 @@
     G.mech.add(reg(sw, {name:`Door switch ${s} (plunger)`, pn:'EBF62234504', layer:'mech', tag:'C'})); });
 
   // =================================================================
+  // SECOND PASS — remaining hardware from cad/spec/parts.md. Small parts,
+  // positions are placeholders unless the SM/OM locates them.
+  // =================================================================
+  const dz = -doorHingeZ; // door-local z offset (children were shifted)
+  function inDoor(door, mesh){ mesh.position.z += dz; door.add(mesh); return mesh; }
+  const Wd = MM.DOOR_W, Hd = MM.DOOR_H, T = MM.DOOR_T;
+
+  // door stoppers, hinge caps, bushings, rings
+  [[-1,'L'],[1,'R']].forEach(([s,side])=>{
+    G.base.add(reg(at(box(26,10,26,greyPlastic), s*(W/2-110), MM.DOOR_Y0-5, D+60), {name:`Door stopper ${side}, middle hinge`, pn: side==='L'?'MJB62830601':'MJB63449803', layer:'base', tag:'C'}));
+    G.base.add(reg(at(box(24,8,24,greyPlastic), s*(W/2-24), H+7, D+70), {name:`Door stopper ${side}, upper hinge`, pn:'MJB63649801', layer:'base', tag:'C'}));
+    const cap = cyl(10, 6, greyPlastic, 16); at(cap, s*(W/2-24), H+14, D+22);
+    G.base.add(reg(cap, {name:`Hinge cap ${side}`, pn:'MBL65077501', layer:'base', tag:'C'}));
+    const bush = cyl(10, 10, greyPlastic, 16); at(bush, s*(W/2-24), MM.DOOR_Y0+36, D+22);
+    G.base.add(reg(bush, {name:`Shaft support bushing ${side} (middle hinge)`, pn:'MBF62704701', layer:'base', tag:'C'}));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(9, 1.6, 8, 24), alu); ring.rotation.x=Math.PI/2; at(ring, s*(W/2-24), MM.DOOR_Y0+42, D+22);
+    G.base.add(reg(ring, {name:`Snap ring ${side} (hinge pin)`, pn:'MGZ62766901', layer:'base', tag:'C'}));
+    G.base.add(reg(at(box(70,6,60,alu), s*(W/2-60), MM.DOOR_Y0+4, D+30), {name:`Door support bracket ${side}`, pn:'MJH63894301', layer:'base', tag:'C'}));
+    G.base.add(reg(at(box(60,6,50,alu), s*(W/2-60), MM.KICK_H+MM.FZ_H+4, D+30), {name:`Door bracket ${side} (freezer)`, pn:'MEG61899901', layer:'base', tag:'C'}));
+    // decor panel (side trim) and decor covers (top-front edge)
+    G.base.add(reg(at(box(6, H-MM.KICK_H-40, 40, alu), s*(W/2+3), MM.KICK_H+(H-MM.KICK_H)/2, D-20), {name:`Decor panel ${side} (side trim)`, pn: side==='L'?'ACW73717312':'ACW73717317', layer:'base', tag:'C'}));
+    G.base.add(reg(at(box(W/2-140, 10, 30, darkTrim), s*(W/4+10), H-MM.TOP_REVEAL/2, D+MM.DOOR_T-15), {name:`Decor cover ${side} (top reveal)`, pn: side==='L'?'MCR64758001':'MCR64776601', layer:'base', tag:'C'}));
+    G.base.add(reg(at(box(40,40,20,darkTrim), s*(W/2-80), H-8, D+MM.DOOR_T-10), {name:`Decor cover corner ${side}`, pn:'MCR64788601', layer:'base', tag:'C'}));
+    // rollers, second part numbers
+    const r2 = cyl(20, 16, darkTrim); r2.rotation.z=Math.PI/2; at(r2, s*(W/2-140), 20, 90);
+    G.base.add(reg(r2, {name:`Rear roller ${side}, inner`, pn: side==='L'?'MHA62652801':'4580JQ3001B', layer:'base', tag:'C'}));
+  });
+  G.base.add(reg(at(box(W-60, 6, 30, grille), 0, 4, D-20), {name:'Lower cover assembly, rear (base grille)', pn:'ACQ85891306', layer:'base', tag:'C'}));
+
+  // handle end caps + decor handle covers + mounting brackets (both doors)
+  [leftDoor, rightDoor].forEach((door, i)=>{
+    const side = i===0?'L':'R'; const len=Hd*0.78, r=MM.HANDLE_DIA/2;
+    [-1,1].forEach(k=>{ const cap = cyl(r+0.5, 6, darkTrim, 24); at(cap, Wd-58, Hd/2+k*(len/2+3), T+MM.HANDLE_P-r);
+      inDoor(door, reg(cap, {name:`Handle end cap ${side} ${k<0?'lower':'upper'}`, pn:'MBL65278201', layer:'doors', tag:'C'})); });
+    inDoor(door, reg(at(box(30, len-100, 4, darkTrim), Wd-58, Hd/2, T+2), {name:`Decor handle cover ${side} (under bar)`, pn: side==='L'?'MCR64995701':'MCR64995702', layer:'doors', tag:'C'}));
+    [-1,1].forEach(k=>{ inDoor(door, reg(at(box(24,24,6,alu), Wd-58, Hd/2+k*(len/2-60), T+3), {name:`Handle mounting bracket ${side} ${k<0?'lower':'upper'}`, pn:'AEJ73440302', layer:'doors', tag:'C'}));
+      const stud = cyl(5, 20, alu, 10); stud.rotation.x=Math.PI/2; at(stud, Wd-58, Hd/2+k*(len/2-60), T-8);
+      inDoor(door, reg(stud, {name:`Handle mounting stud ${side} ${k<0?'lower':'upper'} (¼ in Allen)`, pn:'MJB63190001', layer:'doors', tag:'C'})); });
+    inDoor(door, reg(at(box(Wd-40, 6, 4, greyPlastic), Wd/2, 8, -2), {name:`Gasket holder ${side}`, pn:'MEG64120401', layer:'doors', tag:'C'}));
+    inDoor(door, reg(at(box(12,26,10,darkTrim), 30, Hd-30, -5), {name:`Door position magnet ${side}`, pn:'EBF62234513', layer:'doors', tag:'C'}));
+  });
+
+  // LEFT door: mullion spring, dispenser internals, ice-maker sub-parts
+  { const d = leftDoor;
+    const spring = cyl(6, 120, alu, 8); at(spring, Wd-12, Hd-140, -28);
+    inDoor(d, reg(spring, {name:'Mullion door spring', pn:'MHY62044106', layer:'doors', tag:'C'}));
+    const dW=241, dH=356, cx=Wd*0.5, cy=Hd*0.55;
+    inDoor(d, reg(at(box(dW+16, dH+16, 6, darkTrim), cx, cy, T-1), {name:'Dispenser cover frame', pn:'MCK62965301', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(dW-10, 60, 4, dispPanel), cx, cy+dH/2-40, T-18), {name:'Dispenser front cover (upper)', pn:'MCK69570701', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(70, 30, 14, darkTrim), cx, cy-dH*0.28+22, T-6), {name:'Dispenser lever holder', pn:'MEG63262301', layer:'doors', tag:'C'}));
+    [-1,1].forEach(k=>inDoor(d, reg(at(box(26,14,6,greyPlastic), cx+k*60, cy-dH*0.28, T-2), {name:`Dispenser lever button ${k<0?'water':'ice'}`, pn: k<0?'MBG64843402':'MBG64707201', layer:'doors', tag:'C'})));
+    inDoor(d, reg(at(box(dW*0.55+8, 20, 4, darkTrim), cx, cy-dH*0.28, T-6), {name:'Dispenser lever cover', pn:'MCK67046601', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(10,10,12,darkTrim), cx+dW*0.3, cy-dH*0.28, T-14), {name:'Dispenser micro switch', pn:'6600JB3001C', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(8,8,8,darkTrim), cx-dW*0.3, cy-dH*0.28, T-14), {name:'Push button switch', pn:'6600JR1002L', layer:'doors', tag:'C'}));
+    const funnel = new THREE.Mesh(new THREE.ConeGeometry(16, 40, 16), greyPlastic); funnel.rotation.x=Math.PI; at(funnel, cx, cy+40, T-30);
+    inDoor(d, reg(funnel, {name:'Water funnel (dispenser nozzle)', pn:'MDR62242301', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(dW-20, 12, 60, greyPlastic), cx, cy-dH/2+8, T-30), {name:'Dispenser drain tray', pn:'AJP73574401', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(dW-40, 8, 40, greyPlastic), cx, cy-dH/2+2, T-26), {name:'Drain tray, lower', pn:'MJS62812601', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(80, 90, 12, darkTrim), cx, cy+90, T-40), {name:'Ice dispenser door (duct door)', pn:'ABN73678303', layer:'doors', tag:'C'}));
+    const idm = cyl(16, 30, blackMetal, 16); idm.rotation.z=Math.PI/2; at(idm, cx+70, cy+90, T-48);
+    inDoor(d, reg(idm, {name:'Ice door motor (AC geared, 31–42 Ω)', pn:'EAU59551204', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(40,40,10,darkTrim), cx+70, cy+90, T-28), {name:'Ice door motor cover', pn:'3550JA2273A', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(6, 60, 6, alu), cx-50, cy+90, T-44), {name:'Dispenser door link', pn:'MFF62463201', layer:'doors', tag:'C'}));
+    const sp2 = cyl(4, 40, alu, 8); at(sp2, cx-60, cy+120, T-44);
+    inDoor(d, reg(sp2, {name:'Ice door lever spring', pn:'4970JA3011K', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(70, 210, 8, dispPanel), cx-dW/2-45, cy+40, T-4), {name:'Display cover assembly (membrane, white LED)', pn:'ACQ86599630', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(50, 160, 3, pcb), cx-dW/2-45, cy+40, T-10), {name:'Display PCB', pn:'EBR78631903', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(dW-10, 60, 4, dispPanel), cx, cy-dH/2+40, T-18), {name:'Dispenser front cover (lower)', pn:'MCK71555401', layer:'doors', tag:'C'}));
+    // ice maker sub-parts
+    inDoor(d, reg(at(box(300, 190, 120, clearPlastic), 210, Hd-470, -65), {name:'Ice bucket', pn:'AKC73249303', layer:'doors', tag:'C', dims:fmt(300,190,120)}));
+    const ibh = cyl(5, 40, alu, 8); ibh.rotation.z=Math.PI/2; at(ibh, 210, Hd-570, -134);
+    inDoor(d, reg(ibh, {name:'Ice bank door hinge, lower', pn:'AEH74156201', layer:'doors', tag:'C'}));
+    const ibg = new THREE.Group(); ibg.add(at(box(310,6,4,gasket),210,Hd-262,-136)); ibg.add(at(box(310,6,4,gasket),210,Hd-458,-136)); ibg.add(at(box(6,200,4,gasket),58,Hd-360,-136)); ibg.add(at(box(6,200,4,gasket),362,Hd-360,-136));
+    inDoor(d, reg(ibg, {name:'Ice bin door gasket', pn:'MDS64239202', layer:'doors', tag:'C'}));
+    const am = cyl(22, 60, blackMetal, 16); at(am, 210, Hd-620, -70);
+    inDoor(d, reg(am, {name:'Ice maker & auger motor assembly', pn:'EAU60783850', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(320, 6, 130, linerDoor), 210, Hd-46, -65), {name:'Ice room cover (top)', pn:'MCK67979601', layer:'doors', tag:'C'}));
+  }
+  // RIGHT door: Home Bar covers, cap hinge
+  { const d = rightDoor; const dw = Wd-80, dh = Hd*0.62, dx = Wd/2, dy = Hd*0.5+40;
+    inDoor(d, reg(at(box(dw, 8, 150, linerDoor), dx, dy+dh/2+8, -75), {name:'Home Bar cover, upper', pn:'MCK67480101', layer:'doors', tag:'C'}));
+    inDoor(d, reg(at(box(dw, 8, 150, linerDoor), dx, dy-dh/2-8, -75), {name:'Home Bar cover, lower', pn:'MCK67979701', layer:'doors', tag:'C'}));
+    const ch = cyl(6, 24, alu, 10); at(ch, dx-dw/2-6, dy+dh/2-20, T/2);
+    inDoor(d, reg(ch, {name:'Home Bar cap hinge (upper) / SVC pin hole (lower)', pn:'—', layer:'doors', tag:'C', note:'SM §3-26: rotate hinge lever CW, separate Home Bar, pull door-foam assembly up.'}));
+    inDoor(d, reg(at(box(dw-20, dh-20, 4, foam), dx, dy, 14), {name:'ColdSaver panel (Door-in-Door insulation)', pn:'—', layer:'doors', tag:'C'}));
+  }
+
+  // filter covers, LED / lamp covers, ducts and caps
+  G.fresh.add(reg(at(box(90, 70, 130, liner), -MM.FF_W/2+90, MM.FF_Y1-50, z0+MM.FF_D-160), {name:'Filter cover', pn:'MCK67447801', layer:'fresh', tag:'C'}));
+  const byp = cyl(32, 30, greyPlastic, 16); byp.rotation.x=Math.PI/2; at(byp, -MM.FF_W/2+90, MM.FF_Y1-70, z0+MM.FF_D-250);
+  G.fresh.add(reg(byp, {name:'Filter bypass cap (runs without a filter)', pn:'ABN73019101', layer:'fresh', tag:'C'}));
+  const fh = cyl(42, 30, liner, 16); fh.rotation.x=Math.PI/2; at(fh, -MM.FF_W/2+90, MM.FF_Y1-70, z0+MM.FF_D-70);
+  G.fresh.add(reg(fh, {name:'Filter head (LT700P socket)', pn:'ADQ36011715', layer:'fresh', tag:'C'}));
+  [[-MM.FF_W/2+8,'L','MCK66592001'],[MM.FF_W/2-8,'R','MCK67153601']].forEach(([x,side,pn])=>{ const c=at(box(6, 580, 30, clearPlastic), x, MM.FF_Y0+640, z0+MM.FF_D-120);
+    G.fresh.add(reg(c, {name:`LED lamp cover ${side}`, pn, layer:'fresh', tag:'C'})); });
+  G.fresh.add(reg(at(box(320, 6, 34, clearPlastic), 60, MM.FF_Y1-8, z0+MM.FF_D-150), {name:'Ceiling lamp cover', pn:'MCK68069401', layer:'fresh', tag:'C'}));
+  G.fresh.add(reg(at(box(240, 6, 30, clearPlastic), 0, MM.FF_Y0+1000, z0+40), {name:'Lamp cover, rear duct', pn:'ACQ86133501', layer:'fresh', tag:'C'}));
+  G.freezer.add(reg(at(box(180, 6, 24, clearPlastic), 0, MM.FZ_Y1-10, D-300), {name:'Freezer lamp cover', pn:'ACQ87128801', layer:'freezer', tag:'C'}));
+  G.fresh.add(reg(at(box(220, 40, 30, liner), 0, MM.FF_Y0+280, z0+20), {name:'Duct connector', pn:'MCZ62872001', layer:'fresh', tag:'C'}));
+  G.fresh.add(reg(at(box(220, 700, 10, foam), 0, MM.FF_Y0+640, z0+5), {name:'Duct insulation', pn:'MCZ63192901', layer:'fresh', tag:'C'}));
+  [[-90,'MBL61865301'],[90,'MBL61865401']].forEach(([x,pn])=>{ const c=cyl(14, 8, greyPlastic, 12); c.rotation.x=Math.PI/2; at(c, x, MM.FF_Y1-30, z0+42);
+    G.fresh.add(reg(c, {name:'Duct cap', pn, layer:'fresh', tag:'C'})); });
+  G.fresh.add(reg(at(box(24, 900, 16, greyPlastic), -MM.FF_W/2+14, MM.FF_Y0+540, z0+30), {name:'Tube cover (water line, left wall)', pn:'MCK67502201', layer:'fresh', tag:'C'}));
+  // shelf / rail holders and connectors
+  [[MM.FF_Y0+590,'B'],[MM.FF_Y0+840,'A']].forEach(([y,row])=>[-380,0,380].forEach((x,i)=>{
+    G.fresh.add(reg(at(box(26, 30, 16, greyPlastic), x, y+8, z0+18), {name:`Shelf holder, row ${row}, rail ${i+1}`, pn: i===1?'MEG63060501':'MEG64000201', layer:'fresh', tag:'C'})); }));
+  [-1,1].forEach(s=>{ G.fresh.add(reg(at(box(14, 40, 40, greyPlastic), s*(MM.FF_W/2-14), MM.FF_Y0+280, zc), {name:`Drawer rail holder ${s<0?'L':'R'}`, pn:'MEG63342501', layer:'fresh', tag:'C'}));
+    G.fresh.add(reg(at(box(20, 20, 40, greyPlastic), s*(MM.FF_W/2-30), MM.FF_Y0+272, zc+260), {name:`Rail connector ${s<0?'L':'R'}`, pn: s<0?'MCD62287601':'MCD62287602', layer:'fresh', tag:'C'}));
+    G.fresh.add(reg(at(box(12, 24, 500, alu), s*(MM.FF_W/2-8), MM.FF_Y0+250, zc+30), {name:`Crisper slide rail ${s<0?'L':'R'}`, pn: s<0?'MGT61844004':'MGT61844003', layer:'fresh', tag:'C'}));
+    G.fresh.add(reg(at(box(16, 30, 300, greyPlastic), s*(MM.FF_W/2-12), MM.FF_Y0+120, zc), {name:`Crisper rail guide ${s<0?'L':'R'}`, pn: s<0?'AEC73637501':'AEC73637502', layer:'fresh', tag:'C'}));
+    G.freezer.add(reg(at(box(16, 30, 360, greyPlastic), s*(W/2-MM.WALL_SIDE-12), MM.FZ_FLOOR+330, D-260), {name:`Freezer drawer guide ${s<0?'L':'R'}`, pn:'MEA61842101', layer:'freezer', tag:'C'})); });
+  // water routing
+  const wline = new THREE.Group(); { const t1=cyl(4, 1500, clearPlastic, 8); at(t1, -W/2+MM.WALL_SIDE/2+4, MM.KICK_H+900, D-30); wline.add(t1);
+    const t2=cyl(4, 300, clearPlastic, 8); t2.rotation.z=Math.PI/2; at(t2, -W/2+160, H-20, D-30); wline.add(t2); }
+  G.mech.add(reg(wline, {name:'Water line tube (valve → tank → left door via top hinge)', pn:'AJR73964201', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(20,20,20,greyPlastic), -W/2+MM.WALL_SIDE/2+4, MM.KICK_H+150, D-30), {name:'Tube connector', pn:'MCD63827601', layer:'mech', tag:'C'}));
+  G.fresh.add(reg(at(box(400, 6, 130, liner), 0, MM.FF_Y0+112, z0+130), {name:'Reservoir cover (over water tank)', pn:'EBS61443328', layer:'fresh', tag:'C'}));
+  // machine room mounts, electrics, cover
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b],i)=>{ const dmp = cyl(14, 22, gasket, 12); at(dmp, 150+a*130, MM.KICK_H+22, 140+b*80);
+    G.mech.add(reg(dmp, {name:`Compressor damper (rubber mount) ${i+1}`, pn:'MCQ67247501', layer:'mech', tag:'C'}));
+    G.mech.add(reg(at(box(20,6,20,alu), 150+a*130, MM.KICK_H+36, 140+b*80), {name:`Compressor mount clip ${i+1}`, pn:'4620JA3015A', layer:'mech', tag:'C'})); });
+  const sp = cyl(5, 90, copper, 8); sp.rotation.z=Math.PI/2; at(sp, 20, MM.KICK_H+90, 140);
+  G.mech.add(reg(sp, {name:'Sealing / process pipe', pn:'MGE62010606', layer:'mech', tag:'C'}));
+  const capc = cyl(20, 50, blackMetal, 16); at(capc, 300, MM.KICK_H+140, 60);
+  G.mech.add(reg(capc, {name:'Run capacitor', pn:'EAE58905704', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(40,30,20,blackMetal), 320, MM.KICK_H+110, 200), {name:'Overload protector', pn:'6750CL0001C', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(30,20,14,blackMetal), 320, MM.KICK_H+140, 200), {name:'PTC thermistor / start relay', pn:'EBG61486613', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(W-80, 250, 4, grille), 0, MM.KICK_H+130, 2), {name:'Machinery (machine room) cover, rear', pn:'ACQ85930901', layer:'mech', tag:'C', dims:fmt(W-80,250,4)}));
+  G.mech.add(reg(at(box(150, 150, 6, grille), -180, MM.KICK_H+130, 200), {name:'Condenser fan grill', pn:'AEB73764503', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(150, 150, 6, grille), 0, MM.FZ_Y1-60, MM.FF_Z0+50), {name:'Evaporator fan grill', pn:'AEB73764506', layer:'mech', tag:'C'}));
+  [[-1,'5040JQ2002B'],[1,'5040JQ2003A']].forEach(([s,pn])=>G.mech.add(reg(at(box(30,40,20,greyPlastic), s*60, MM.FF_Y0+300, z0+30), {name:`Damper motor support ${s<0?'L':'R'}`, pn, layer:'mech', tag:'C'})));
+  const irf = new THREE.Group(); { const f=cyl(45, 20, greyPlastic, 20); f.rotation.z=Math.PI/2; at(f, -MM.FF_W/2+30, MM.FF_Y1-200, z0+MM.FF_D-300); irf.add(f); }
+  G.mech.add(reg(irf, {name:'Ice room fan assembly + DC motor (feeds in-door ice maker)', pn:'ADP73713301 / EAU63103202', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(120, 90, 20, pcb), -300, MM.KICK_H+200, 30), {name:'Power control board (machine room)', pn:'EBR60070733', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(80, 60, 6, pcb), 180, MM.CASE_H-420, 6), {name:'Sensor control board', pn:'EBR71326804', layer:'mech', tag:'C'}));
+  G.mech.add(reg(at(box(300, 220, 30, darkTrim), 180, MM.CASE_H-260, -6), {name:'PCB cover / case (outer)', pn:'MCK67464101 / ACQ86388101', layer:'mech', tag:'C'}));
+  const harness = cyl(6, MM.CASE_H-400, blackMetal, 8); at(harness, -W/2+40, MM.CASE_H/2, 8);
+  G.mech.add(reg(harness, {name:'Main wire harness (cabinet back, left)', pn:'EAD62160110', layer:'mech', tag:'C'}));
+  const airc = at(box(90, 90, 12, foam), 0, MM.FF_Y0+930, z0+52);
+  G.fresh.add(reg(airc, {name:'Air cleaner filter element', pn:'ADQ73214408', layer:'fresh', tag:'C'}));
+  G.freezer.add(reg(at(box(W-2*MM.WALL_SIDE-100, 8, 30, greyPlastic), 0, MM.FZ_FLOOR+8, D-120), {name:'Freezer tray (discontinued, lower)', pn:'MJS62591801', layer:'freezer', tag:'C'}));
+
+  // =================================================================
+  // LG DIMENSION LINES — spec-sheet diagram letters A–I
+  // =================================================================
+  const dimMat = new THREE.LineBasicMaterial({color:0xb04fd6});
+  function dimLine(a, b, label, off){
+    const g = new THREE.Group();
+    const pts = [new THREE.Vector3(...a), new THREE.Vector3(...b)];
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), dimMat));
+    pts.forEach(p=>{ const t = new THREE.Mesh(new THREE.SphereGeometry(6, 8, 8), new THREE.MeshBasicMaterial({color:0xb04fd6})); t.position.copy(p); g.add(t); });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:textTex(label, 30, '#b04fd6', 512), transparent:true, depthTest:false}));
+    sp.scale.set(560, 70, 1); sp.position.copy(pts[0]).lerp(pts[1], 0.5).add(new THREE.Vector3(...(off||[0,60,0])));
+    g.add(sp); return g;
+  }
+  const xL = -W/2-140, yB = 0, zF = D+MM.DOOR_T+MM.HANDLE_P;
+  G.dims.add(reg(dimLine([xL, H+60, 0], [xL, H+60, zF], 'A  35⅜ in', [0,60,0]), {name:'Dim A — depth with handles', pn:'—', layer:'dims', tag:'C', dims:'898 mm · 35⅜ in'}));
+  G.dims.add(reg(dimLine([xL, H+160, 0], [xL, H+160, D+MM.DOOR_T], 'B  32⅞ in', [0,60,0]), {name:'Dim B — depth without handles', pn:'—', layer:'dims', tag:'C', dims:'835 mm · 32⅞ in'}));
+  G.dims.add(reg(dimLine([xL, H+260, 0], [xL, H+260, D], 'C  29 in', [0,60,0]), {name:'Dim C — depth without door', pn:'—', layer:'dims', tag:'C', dims:'737 mm · 29 in'}));
+  G.dims.add(reg(dimLine([W/2+180, yB, zF+40], [W/2+180, H, zF+40], 'E  68⅜ in', [260,0,0]), {name:'Dim E — height to top of case', pn:'—', layer:'dims', tag:'C', dims:'1737 mm · 68⅜ in'}));
+  G.dims.add(reg(dimLine([W/2+420, yB, zF+40], [W/2+420, MM.HINGE_TOP, zF+40], 'F  69¾ in', [260,120,0]), {name:'Dim F — height to top of hinge', pn:'—', layer:'dims', tag:'C', dims:'1772 mm · 69¾ in'}));
+  G.dims.add(reg(dimLine([-W/2, -100, zF+40], [W/2, -100, zF+40], 'G  35¾ in', [0,-70,0]), {name:'Dim G — width', pn:'—', layer:'dims', tag:'C', dims:'908 mm · 35¾ in'}));
+  G.dims.add(reg(dimLine([-W/2-60, MM.FF_Y0, D+MM.DOOR_T+300], [-W/2-60, MM.FF_Y1, D+MM.DOOR_T+300], '42 in opening (README)', [-330,0,0]), {name:'Fridge-section opening height (README)', pn:'—', layer:'dims', tag:'P', dims:'1066 mm · 42 in — not in any LG document'}));
+  G.dims.add(reg(dimLine([-MM.FF_W/2, MM.FF_Y1+120, D+MM.DOOR_T+300], [MM.FF_W/2, MM.FF_Y1+120, D+MM.DOOR_T+300], '34 in opening (README)', [0,70,0]), {name:'Fridge-section opening width (README)', pn:'—', layer:'dims', tag:'P', dims:'864 mm · 34 in — not in any LG document'}));
+
+  // =================================================================
   // View state + door animation
   // =================================================================
   let doorAngle = 0, targetDoorAngle = 0, drawerOut = 0, targetDrawer = 0, ghost = false;
@@ -684,7 +851,8 @@
   Object.entries(LAYERS).forEach(([k,v])=>{
     const n = parts.filter(p=>p.layer===k).length;
     const lab = document.createElement('label');
-    lab.innerHTML = `<input type="checkbox" id="layer-${k}" checked><span class="sw" style="background:${v.color}"></span>${v.name}<span class="n">${n}</span>`;
+    lab.innerHTML = `<input type="checkbox" id="layer-${k}" ${v.off?'':'checked'}><span class="sw" style="background:${v.color}"></span>${v.name}<span class="n">${n}</span>`;
+    G[k].visible = !v.off;
     lab.querySelector('input').addEventListener('change', e=>{ G[k].visible = e.target.checked; });
     layersEl.appendChild(lab);
   });
