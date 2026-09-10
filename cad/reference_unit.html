@@ -259,8 +259,10 @@
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, innerWidth/innerHeight, 10, 30000);
   const target = new THREE.Vector3(0, MM.CASE_H*0.48, MM.CAB_D*0.5);
-  const HOME = {radius:3000, theta:0.62, phi:1.28};
-  const orbit = {radius:HOME.radius, theta:HOME.theta, phi:HOME.phi, tR:HOME.radius, tT:HOME.theta, tP:HOME.phi, minR:1200, maxR:7000, autoRotate:!reducedMotion};
+  // Frame the full 1772 mm height with margin at any aspect ratio
+  function homeRadius(){ const a = innerWidth/innerHeight; return a < 1.2 ? 6200 : a < 1.8 ? 5400 : 4900; }
+  const HOME = {radius:homeRadius(), theta:0.62, phi:1.32};
+  const orbit = {radius:HOME.radius, theta:HOME.theta, phi:HOME.phi, tR:HOME.radius, tT:HOME.theta, tP:HOME.phi, minR:1200, maxR:8000, autoRotate:!reducedMotion};
   function placeCamera(){
     const sp=Math.sin(orbit.phi), cp=Math.cos(orbit.phi);
     camera.position.set(target.x+orbit.radius*sp*Math.sin(orbit.theta), target.y+orbit.radius*cp, target.z+orbit.radius*sp*Math.cos(orbit.theta));
